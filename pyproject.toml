@@ -9,5 +9,7 @@ dependencies = [
     "ruff (>=0.16.0,<0.17.0)",
     "pydantic (>=2.13.4,<3.0.0)",
     "pydantic-settings (>=2.14.2,<3.0.0)",
-    "pytest (>=9.1.1,<10.0.0)"
+    "pytest (>=9.1.1,<10.0.0)",
+    "sqlalchemy (>=2.0.51,<3.0.0)",
+    "alembic (>=1.18.5,<2.0.0)"
 ]
