@@ -2,7 +2,7 @@ from sqlalchemy import Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.entities.base import Base
-from app.database.entities.role import UserRole
+from app.database.entities.user_role import UserRole
 
 
 class User(Base):
