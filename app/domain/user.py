@@ -5,6 +5,8 @@ from app.domain.user_role import UserRole
 
 @dataclass
 class User:
+    id: int
+
     """
     Роль юзера (родитель/ребенок)
     """

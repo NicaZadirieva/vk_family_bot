@@ -8,6 +8,7 @@ from app.database.entities.user_role import UserRole
 class User(Base):
     __tablename__ = "users"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
     """
     Уникальный идентификатор ВКонтакте
     """
