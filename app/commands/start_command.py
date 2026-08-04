@@ -1,5 +1,9 @@
+from app.database.services.user_service import UserService
+
+
 class StartCommand():
-	def __init__(self, user_id: int):
+	# TODO: возможно придется отрефакторить под паттерн строитель/фабрика
+	def __init__(self, service: UserService, user_id: int, family_id: int):
 		# Поиск user_id в БД и текущей семье
 		# Если True, в команде Start не делаем ничего
 		# Если False, пишет "Вы не состоите в семье. Пожалуйста, войдите через секретный пароль"
