@@ -1,5 +1,6 @@
 from passlib.context import CryptContext
 
+from app.core.join_context import JoinContext
 from app.core.mapper import Mapper
 from app.database.repositories.password_repository import PasswordRepository
 from app.domain.user import User
@@ -29,13 +30,16 @@ class PasswordService:
     def __init__(self, password_repo: PasswordRepository):
         self._password_repo = password_repo
 
-    async def verify_user(self, user: User, plain_password: str):
-        userDb = Mapper.to_userDb(user)
-        hash: str | None = await self._password_repo.get_hash(userDb)
+    async def verify_user(self, joinContext: JoinContext):
+        hash: str | None = await self._password_repo.get_hash(joinContext)
         if not hash:
             raise NotFoundError(
                 "Пользователь с текущими данными не найден для верификации",
-                {"user_id": user.id, "vk_id": user.vk_id, "family_id": user.family_id},
+                {
+                    "user_id": joinContext.user_id,
+                    "vk_id": joinContext.vk_id,
+                    "family_id": joinContext.family_id,
+                },
             )
 
-        return PasswordService.verify(plain_password, hash)
+        return PasswordService.verify(joinContext.password, hash)

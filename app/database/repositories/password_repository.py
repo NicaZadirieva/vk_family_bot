@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.join_context import JoinContext
 from app.database.entities.auth_users import AuthUsers
 from app.database.entities.user import User
 from app.database.entities.user_role import UserRole
@@ -23,9 +24,10 @@ class PasswordRepository:
             child_profile_id=344545,
         )
 
-    async def get_hash(self, user: User):
+    async def get_hash(self, joinContext: JoinContext):
         stmt = select(self.model.password_hash).where(
-            self.model.family_id == user.family_id, self.model.user_id == user.id
+            self.model.family_id == joinContext.family_id,
+            self.model.user_id == joinContext.user_id,
         )
         result = await self.db_session.execute(stmt)
         password_hash = result.scalar_one_or_none()

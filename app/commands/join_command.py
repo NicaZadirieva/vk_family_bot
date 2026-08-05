@@ -1,17 +1,16 @@
-from dataclasses import dataclass
 from typing import Any
-from app.commands.base_command import Command
+from app.commands.base_command import Command, CommandResult
+from app.core.join_context import JoinContext
 from app.errors.invalid_login_error import InvalidLoginError
 from app.errors.lack_of_data_error import LackOfDataError
+from app.errors.not_found_user import NotFoundError
+from app.services.password_service import PasswordService
 
-@dataclass
-class JoinContext:
-	password: str
-	user_id: int
-	family_id: int
-	vk_id: int
 
 class JoinCommand(Command):
+	def __init__(self, password_service: PasswordService):
+		self._password_service = password_service
+
 	def __get_data_from_context__(self, context: dict[str, Any]) -> JoinContext:
 		vk_id = context.get("vk_id")
 		family_id = context.get("family_id")
@@ -27,4 +26,19 @@ class JoinCommand(Command):
 	async def execute(self, context: dict[str, Any]):
 		try:
 			data: JoinContext = self.__get_data_from_context__(context)
-
+			is_verified_user = await self._password_service.verify_user(data)
+			if is_verified_user:
+				return CommandResult(success=True, next_command=)
+			else:
+				# непредвиденная ситуация
+				return CommandResult(success=False, next_command=)
+		except NotFoundError as e:
+			return СommandResult(success=False, error=e.message, next_command=)
+		except LackOfDataError as e:
+			return СommandResult(success=False, error=e.message, next_command=)
+		except InvalidLoginError as e:
+			return СommandResult(success=False, error=e.message, next_command=)
+		except Exception as e:
+			# непредвиденная ситуация
+				return CommandResult(success=False, next_command=)
+		

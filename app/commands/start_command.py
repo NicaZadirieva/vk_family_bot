@@ -1,9 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
 from app.commands.base_command import Command, CommandResult
-from app.errors.domain_error import DomainError
 from app.errors.invalid_login_error import InvalidLoginError
-from app.errors.lack_of_data_error import InsufficientPermissionsError, LackOfDataError
+from app.errors.lack_of_data_error import LackOfDataError
 from app.services.login_service import LoginService
 
 @dataclass
@@ -46,5 +45,8 @@ class StartCommand(Command):
 
         if is_user_allowed:
             return CommandResult(success=True, next_command=)
+        else:
+            # непредвиденная ситуация
+            return CommandResult(success=False, next_command=)
         
         
