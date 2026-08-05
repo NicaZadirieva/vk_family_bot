@@ -8,13 +8,18 @@ from app.services.password_service import PasswordService
 
 
 class JoinCommand(Command):
+	"""
+	Вход с паролем
+	"""
 	def __init__(self, password_service: PasswordService):
+		super().__init__()
 		self._password_service = password_service
 
 	def __get_data_from_context__(self, context: dict[str, Any]) -> JoinContext:
 		vk_id = context.get("vk_id")
 		family_id = context.get("family_id")
 		user_id = context.get("user_id")
+		# TODO: пароль вводит юзер. Надо заменить
 		password = context.get("password")
 		if not vk_id or not family_id or not user_id or not password:
 			raise LackOfDataError("vk_id, family_id, user_id", {"vk_id": vk_id, "family_id": family_id, "user_id": user_id})

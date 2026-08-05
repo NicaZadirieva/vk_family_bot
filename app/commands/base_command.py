@@ -23,7 +23,7 @@ class Command[T](ABC):
         self._next_on_failure: Command | None = None
 
     @abstractmethod
-    def execute(self, context: dict[str, Any]) -> CommandResult[T]:
+    async def execute(self, context: dict[str, Any]) -> CommandResult[T]:
         """Выполняет команду.
 
         Args:
