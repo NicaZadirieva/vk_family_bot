@@ -32,12 +32,10 @@ class JoinCommand(Command):
             .then(JoinCommand(self.session, self._password_service))
         )
 
-    def __get_data_from_context__(self) -> JoinContext:
+    def __get_data_from_context__(self, password: str) -> JoinContext:
         vk_id = self.session.get("vk_id")
         family_id = self.session.get("family_id")
         user_id = self.session.get("user_id")
-        # TODO: пароль вводит юзер. Надо заменить
-        password = context.get("password")
         if not vk_id or not family_id or not user_id or not password:
             raise LackOfDataError(
                 "vk_id, family_id, user_id",
@@ -58,7 +56,9 @@ class JoinCommand(Command):
 
     async def execute(self):
         try:
-            data: JoinContext = self.__get_data_from_context__()
+            data: JoinContext = self.__get_data_from_context__(
+                self.session.get("password")
+            )
             is_verified_user = await self._password_service.verify_user(data)
             if is_verified_user:
                 # TODO: написать команду по показу сообщения об успешном входе в чат семьи
