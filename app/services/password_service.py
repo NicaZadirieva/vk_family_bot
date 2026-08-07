@@ -1,10 +1,8 @@
 from passlib.context import CryptContext
 
 from app.core.join_context import JoinContext
-from app.core.mapper import Mapper
 from app.database.repositories.password_repository import PasswordRepository
-from app.domain.user import User
-from app.errors.not_found_user import NotFoundError
+from app.errors.resource_not_found_error import ResourceNotFoundError
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -33,7 +31,7 @@ class PasswordService:
     async def verify_user(self, joinContext: JoinContext):
         hash: str | None = await self._password_repo.get_hash(joinContext)
         if not hash:
-            raise NotFoundError(
+            raise ResourceNotFoundError(
                 "Пользователь с текущими данными не найден для верификации",
                 {
                     "user_id": joinContext.user_id,
