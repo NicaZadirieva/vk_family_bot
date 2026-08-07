@@ -1,13 +1,14 @@
 from typing import Any
 
 from app.commands.base_command import Command, CommandResult
+from app.handlers.session_storage import SessionStorage
 
 
 class HelpCommand(Command):
     """Команда с Fluent API для настройки справки."""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, session: SessionStorage):
+        super().__init__(session)
         self._command_name: str | None = None
         self._description: str | None = None
         self._usage: str | None = None
@@ -45,12 +46,12 @@ class HelpCommand(Command):
         self._next_command = command
         return self
 
-    async def execute(self, context: dict[str, Any]) -> CommandResult:
+    async def execute(self) -> CommandResult:
         """Показывает справку."""
 
         # Формируем справку из настроек
         help_data = {
-            "command": self._command_name or context.get("current_command", "unknown"),
+            "command": self._command_name,
             "description": self._description or "No description",
             "usage": self._usage or "No usage info",
             "examples": self._examples,
@@ -59,10 +60,6 @@ class HelpCommand(Command):
 
         # Выводим справку
         self._print_help(help_data)
-
-        # Сохраняем в контекст
-        context["help"] = help_data
-        context["help_shown"] = True
 
         # Передаем управление дальше
         return CommandResult(

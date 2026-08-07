@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Optional, TypeVar
 
+from app.handlers.session_storage import SessionStorage
+
 T = TypeVar("T")
 
 
@@ -18,12 +20,13 @@ class CommandResult[T]:
 class Command[T](ABC):
     """Абстрактная команда."""
 
-    def __init__(self):
+    def __init__(self, session: SessionStorage):
         self._next_on_success: Command | None = None
         self._next_on_failure: Command | None = None
+        self.session = session
 
     @abstractmethod
-    async def execute(self, context: dict[str, Any]) -> CommandResult[T]:
+    async def execute(self) -> CommandResult[T]:
         """Выполняет команду.
 
         Args:
