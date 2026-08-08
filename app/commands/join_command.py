@@ -32,7 +32,7 @@ class JoinCommand(Command):
             .then(JoinCommand(self.session, self._password_service))
         )
 
-    def __get_data_from_context__(self, password: str) -> JoinContext:
+    def get_data_from_context(self, password: str) -> JoinContext:
         vk_id = self.session.get("vk_id")
         family_id = self.session.get("family_id")
         user_id = self.session.get("user_id")
@@ -56,9 +56,7 @@ class JoinCommand(Command):
 
     async def execute(self):
         try:
-            data: JoinContext = self.__get_data_from_context__(
-                self.session.get("password")
-            )
+            data: JoinContext = self.get_data_from_context(self.session.get("password"))
             is_verified_user = await self._password_service.verify_user(data)
             if is_verified_user:
                 # TODO: написать команду по показу сообщения об успешном входе в чат семьи

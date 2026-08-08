@@ -1,6 +1,5 @@
 import logging
 from dataclasses import dataclass
-from typing import Any
 
 from app.commands.base_command import Command, CommandResult
 from app.commands.help_command import HelpCommand
