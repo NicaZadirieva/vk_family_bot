@@ -20,13 +20,12 @@ class CommandResult[T]:
 class Command[T](ABC):
     """Абстрактная команда."""
 
-    def __init__(self, session: SessionStorage):
+    def __init__(self):
         self._next_on_success: Command | None = None
         self._next_on_failure: Command | None = None
-        self.session = session
 
     @abstractmethod
-    async def execute(self) -> CommandResult[T]:
+    async def execute(self, context: dict[str, Any]) -> CommandResult[T]:
         """Выполняет команду.
 
         Args:

@@ -19,23 +19,25 @@ class JoinCommand(Command):
     Вход с паролем
     """
 
-    def __init__(self, session: SessionStorage, password_service: PasswordService):
-        super().__init__(session)
+    def __init__(self, password_service: PasswordService):
+        super().__init__()
         self._password_service = password_service
 
     def __get_help_command__(self):
         return (
-            HelpCommand(self.session)
+            HelpCommand()
             .for_command("join")
             .with_description("Вход по паролю в чат семьи")
             .with_usage("/join <пароль>")
-            .then(JoinCommand(self.session, self._password_service))
+            .then(JoinCommand(self._password_service))
         )
 
-    def get_data_from_context(self, password: str) -> JoinContext:
-        vk_id = self.session.get("vk_id")
-        family_id = self.session.get("family_id")
-        user_id = self.session.get("user_id")
+    def get_data_from_context(
+        self, context: dict[str, Any], password: str | None
+    ) -> JoinContext:
+        vk_id = context.get("vk_id")
+        family_id = context.get("family_id")
+        user_id = context.get("user_id")
         if not vk_id or not family_id or not user_id or not password:
             raise LackOfDataError(
                 "vk_id, family_id, user_id",
@@ -54,9 +56,11 @@ class JoinCommand(Command):
                 {"vk_id": vk_id, "family_id": family_id},
             )
 
-    async def execute(self):
+    async def execute(self, context: dict[str, Any]):
         try:
-            data: JoinContext = self.get_data_from_context(self.session.get("password"))
+            data: JoinContext = self.get_data_from_context(
+                context, context.get("password")
+            )
             is_verified_user = await self._password_service.verify_user(data)
             if is_verified_user:
                 # TODO: написать команду по показу сообщения об успешном входе в чат семьи
@@ -65,7 +69,7 @@ class JoinCommand(Command):
                 # TODO: вернуть пользователя к вводу пароля
                 return CommandResult(
                     success=False,
-                    next_command=JoinCommand(self.session, self._password_service),
+                    next_command=JoinCommand(self._password_service),
                 )
         except ResourceNotFoundError as e:
             logger.error(f"Resource not found: {e.message}", exc_info=True)
@@ -84,6 +88,4 @@ class JoinCommand(Command):
             )
         except Exception as e:
             logger.exception(f"Unexpected error in {self.__class__.__name__}: {e}")
-            return CommandResult(
-                success=False, next_command=ServerErrorCommand(self.session)
-            )
+            return CommandResult(success=False, next_command=ServerErrorCommand())

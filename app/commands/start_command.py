@@ -1,7 +1,8 @@
 import logging
 from dataclasses import dataclass
+from typing import Any
 
-from app.commands.base_command import Command, CommandResult
+from app.commands.base.base_command import Command, CommandResult
 from app.commands.help_command import HelpCommand
 from app.commands.join_command import JoinCommand
 from app.domain.family import Family
@@ -26,27 +27,26 @@ class StartCommand(Command):
     # TODO: возможно придется отрефакторить под паттерн строитель/фабрика
     def __init__(
         self,
-        session: SessionStorage,
         login_service: LoginService,
         password_service: PasswordService,
         family_service: FamilyService,
     ):
-        super().__init__(session)
+        super().__init__()
         self._login_service = login_service
         self._password_service = password_service
         self._family_service = family_service
 
     def __get_help_command__(self):
         return (
-            HelpCommand(self.session)
+            HelpCommand()
             .for_command("start")
             .with_description("Старт бота")
             .with_usage("start")
         )
 
-    def __get_data_from_context__(self) -> LoginContext:
-        vk_id = self.session.get("vk_id")
-        link = self.session.get("link")
+    def __get_data_from_context__(self, context: dict[str, Any]) -> LoginContext:
+        vk_id = context.get("vk_id")
+        link = context.get("link")
         if not vk_id or not link:
             raise LackOfDataError("vk_id, link", {"vk_id": vk_id, "link": link})
         try:
@@ -56,7 +56,7 @@ class StartCommand(Command):
                 "vk_id, link не являются валидными", {"vk_id": vk_id, "link": link}
             )
 
-    async def execute(self):
+    async def execute(self, context: dict[str, Any]):
         # Поиск user_id в БД и текущей семье
         # Если True, в команде Start не делаем ничего
         # Если False, пишет "Вы не состоите в семье. Пожалуйста, войдите через секретный пароль"
@@ -64,7 +64,7 @@ class StartCommand(Command):
         #
 
         try:
-            data: LoginContext = self.__get_data_from_context__()
+            data: LoginContext = self.__get_data_from_context__(context)
             family: Family | None = await self._family_service.search_family_by_link(
                 data.link
             )
@@ -82,7 +82,7 @@ class StartCommand(Command):
                     # Вы не состоите в семье. Пожалуйста, войдите через секретный пароль
                     return CommandResult(
                         success=False,
-                        next_command=JoinCommand(self.session, self._password_service),
+                        next_command=JoinCommand(self._password_service),
                     )
         except InvalidLoginError as e:
             # TODO: вывести сообщение e.message для пользователя VK
