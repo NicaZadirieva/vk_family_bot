@@ -8,7 +8,6 @@ from app.core.join_context import JoinContext
 from app.errors.invalid_login_error import InvalidLoginError
 from app.errors.lack_of_data_error import LackOfDataError
 from app.errors.resource_not_found_error import ResourceNotFoundError
-from app.handlers.session_storage import SessionStorage
 from app.services.password_service import PasswordService
 
 logger = logging.getLogger(__name__)

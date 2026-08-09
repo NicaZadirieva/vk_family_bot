@@ -8,7 +8,6 @@ from app.commands.join_command import JoinCommand
 from app.domain.family import Family
 from app.errors.invalid_login_error import InvalidLoginError
 from app.errors.lack_of_data_error import LackOfDataError
-from app.handlers.session_storage import SessionStorage
 from app.services.family_service import FamilyService
 from app.services.login_service import LoginService
 from app.services.password_service import PasswordService
