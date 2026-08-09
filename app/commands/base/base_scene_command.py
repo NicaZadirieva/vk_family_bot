@@ -5,6 +5,7 @@ from enum import Enum, auto
 from typing import Any
 
 from app.commands.base.base_command import Command
+from app.commands.base.scene_result import SceneResult
 
 
 class SceneState(Enum):
@@ -37,7 +38,7 @@ class Scene(ABC):
         self._active_sessions: dict[int, SceneContext] = {}
 
     @abstractmethod
-    async def on_enter(self, user_id: int, context: SceneContext) -> str:
+    async def on_enter(self, user_id: int, context: SceneContext) -> SceneResult:
         """Вызывается при входе в сцену. Возвращает приветственное сообщение"""
         raise NotImplementedError("Метод on_enter должен быть реализован")
 
@@ -64,7 +65,7 @@ class Scene(ABC):
         """Получает контекст сцены"""
         return self._active_sessions.get(user_id)
 
-    async def start(self, user_id: int) -> str:
+    async def start(self, user_id: int) -> SceneResult:
         """Начинает сцену"""
         context = SceneContext(user_id=user_id, scene_id=self.scene_id)
         self._active_sessions[user_id] = context

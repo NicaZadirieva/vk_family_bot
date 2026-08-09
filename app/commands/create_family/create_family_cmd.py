@@ -51,7 +51,7 @@ class CreateFamilyCmd(Command):
             # Запускаем новую сцену
             if context.get("start") or text == "/create_family":
                 greeting = await self.scene.start(user_id)
-                await self._send_message(user_id, greeting)
+                await self._send_message(user_id, greeting.message)
                 return CommandResult(success=True, data={"scene_started": True})
 
             return CommandResult(

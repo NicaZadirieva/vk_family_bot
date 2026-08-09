@@ -1,6 +1,7 @@
 from enum import Enum, auto
 
 from app.commands.base.base_scene_command import Scene, SceneContext, SceneState
+from app.commands.base.scene_result import SceneResult
 from app.handlers.session_storage import SessionStorage
 
 
@@ -21,17 +22,21 @@ class CreateFamilyScene(Scene):
         super().__init__("create_family")
         self.session = session
 
-    async def on_enter(self, user_id: int, context: SceneContext) -> str:
+    async def on_enter(self, user_id: int, context: SceneContext) -> SceneResult:
         """Вход в сцену"""
         context.data = {"family": {}, "parent": {}, "children": []}
         context.step = CreateFamilyStep.ASK_NAME
         context.state = SceneState.WAITING_INPUT
         context.user_id = user_id
 
-        return (
-            "👨‍👩‍👧‍👦 **Создание новой семьи**\n\n"
-            "Давайте создадим вашу семью!\n"
-            "Пожалуйста, введите название семьи:"
+        return SceneResult(
+            completed=False,
+            message=(
+                "👨‍👩‍👧‍👦 **Создание новой семьи**\n\n"
+                "Давайте создадим вашу семью!\n"
+                "Пожалуйста, введите название семьи:"
+            ),
+            next_command=None,
         )
 
     async def on_message(self, user_id: int, text: str, context: SceneContext):

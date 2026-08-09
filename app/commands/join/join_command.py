@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from app.commands.base.base_command import Command, CommandResult
-from app.commands.help_command import HelpCommand
+from app.commands.help.help_command import HelpCommand
 from app.commands.server_error_command import ServerErrorCommand
 from app.core.join_context import JoinContext
 from app.errors.invalid_login_error import InvalidLoginError

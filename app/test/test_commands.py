@@ -2,8 +2,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.commands.help_command import HelpCommand
-from app.commands.join_command import JoinCommand
+from app.commands.help.help_command import HelpCommand
+from app.commands.join.join_command import JoinCommand
 from app.commands.server_error_command import ServerErrorCommand
 from app.errors.invalid_login_error import InvalidLoginError
 from app.errors.lack_of_data_error import LackOfDataError

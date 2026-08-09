@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.commands.base.base_command import Command, CommandResult
-from app.commands.help_command import HelpCommand
-from app.commands.join_command import JoinCommand
+from app.commands.help.help_command import HelpCommand
+from app.commands.join.join_command import JoinCommand
 from app.domain.family import Family
 from app.errors.invalid_login_error import InvalidLoginError
 from app.errors.lack_of_data_error import LackOfDataError
