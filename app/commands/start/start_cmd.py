@@ -5,9 +5,11 @@ from typing import Any
 from app.commands.base.base_command import Command, CommandResult
 from app.commands.help.help_command import HelpCommand
 from app.commands.join.join_command import JoinCommand
+from app.commands.start.start_scene import StartScene
 from app.domain.family import Family
 from app.errors.invalid_login_error import InvalidLoginError
 from app.errors.lack_of_data_error import LackOfDataError
+from app.handlers.session_storage import SessionStorage
 from app.services.family_service import FamilyService
 from app.services.login_service import LoginService
 from app.services.password_service import PasswordService
@@ -23,17 +25,21 @@ class LoginContext:
 
 
 class StartCommand(Command):
-    # TODO: возможно придется отрефакторить под паттерн строитель/фабрика
     def __init__(
         self,
         login_service: LoginService,
         password_service: PasswordService,
         family_service: FamilyService,
+        session: SessionStorage,
     ):
         super().__init__()
         self._login_service = login_service
         self._password_service = password_service
         self._family_service = family_service
+        self.scene = StartScene(
+            family_service, login_service, password_service, session
+        )
+        self._next_command = None
 
     def __get_help_command__(self):
         return (
@@ -64,25 +70,44 @@ class StartCommand(Command):
 
         try:
             data: LoginContext = self.__get_data_from_context__(context)
-            family: Family | None = await self._family_service.search_family_by_link(
-                data.link
-            )
-            if not family:
-                """Первый родитель"""
-                # TODO: сделать переход на команду создание семьи
-                return CommandResult(success=True)
-            else:
-                is_user_allowed = await self._login_service.is_user_allowed(
-                    data.vk_id, family_id=family.id
+            # Проверяем, есть ли активная сцена
+            text = context.get("text", "")
+            if self.scene.is_active(data.vk_id):
+                # Продолжаем сцену
+                is_completed, response = await self.scene.process_message(
+                    data.vk_id, text
                 )
-                if is_user_allowed:
-                    return CommandResult(success=True)  # next_command=)
+
+                # Отправляем ответ пользователю
+                await self._send_message(data.vk_id, response)
+
+                if is_completed:
+                    # Сцена завершена
+                    self.scene.end(data.vk_id)
+
+                    # Если есть следующая команда в цепочке
+                    if self._next_command:
+                        return CommandResult(
+                            success=True,
+                            data={"start": True},
+                            next_command=self._next_command,
+                        )
+
+                    return CommandResult(success=True, data={"start": True})
                 else:
-                    # Вы не состоите в семье. Пожалуйста, войдите через секретный пароль
-                    return CommandResult(
-                        success=False,
-                        next_command=JoinCommand(self._password_service),
-                    )
+                    # Сцена продолжается
+                    return CommandResult(success=True, data={"scene_active": True})
+
+            # Запускаем новую сцену
+            if text == "/start":
+                greeting = await self.scene.start(data.vk_id)
+                await self._send_message(data.vk_id, greeting.message)
+                return CommandResult(success=True, data={"scene_started": True})
+
+            return CommandResult(
+                success=False,
+                error="Используйте команду /start для входа в бота",
+            )
         except InvalidLoginError as e:
             # TODO: вывести сообщение e.message для пользователя VK
             logger.error(e)
@@ -95,3 +120,9 @@ class StartCommand(Command):
             return CommandResult(
                 success=False, error=e.message, next_command=self.__get_help_command__()
             )
+
+    async def _send_message(self, vk_id: int, text: str):
+        """Отправка сообщения (заглушка)"""
+        # Здесь должна быть реальная отправка сообщения
+        print(f"Сообщение для {vk_id}: {text}")
+        # await vk_api.messages.send(user_id=user_id, message=text)

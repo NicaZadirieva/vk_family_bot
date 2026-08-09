@@ -22,7 +22,7 @@ class SceneContext:
     """Контекст выполнения сцены"""
 
     scene_id: str
-    user_id: int
+    vk_id: int
     step: Any = 0
     state: SceneState = SceneState.WAITING_INPUT
     data: dict[str, Any] = field(default_factory=dict)
@@ -38,14 +38,12 @@ class Scene(ABC):
         self._active_sessions: dict[int, SceneContext] = {}
 
     @abstractmethod
-    async def on_enter(self, user_id: int, context: SceneContext) -> SceneResult:
+    async def on_enter(self, vk_id: int, context: SceneContext) -> SceneResult:
         """Вызывается при входе в сцену. Возвращает приветственное сообщение"""
         raise NotImplementedError("Метод on_enter должен быть реализован")
 
     @abstractmethod
-    async def on_message(
-        self, user_id: int, text: str, context: SceneContext
-    ) -> tuple[bool, str]:
+    async def on_message(self, vk_id: int, text: str, context: SceneContext):
         """
         Обрабатывает сообщение пользователя
         Возвращает (завершена_ли_сцена, сообщение_для_отправки)
@@ -53,49 +51,49 @@ class Scene(ABC):
         raise NotImplementedError("Метод on_message должен быть реализован")
 
     @abstractmethod
-    async def on_exit(self, user_id: int, context: SceneContext) -> str:
+    async def on_exit(self, vk_id: int, context: SceneContext) -> str:
         """Вызывается при выходе из сцены. Возвращает прощальное сообщение"""
         return "Сцена завершена. Спасибо!"
 
-    def is_active(self, user_id: int) -> bool:
+    def is_active(self, vk_id: int) -> bool:
         """Проверяет, активна ли сцена для пользователя"""
-        return user_id in self._active_sessions
+        return vk_id in self._active_sessions
 
-    def get_context(self, user_id: int) -> SceneContext | None:
+    def get_context(self, vk_id: int) -> SceneContext | None:
         """Получает контекст сцены"""
-        return self._active_sessions.get(user_id)
+        return self._active_sessions.get(vk_id)
 
-    async def start(self, user_id: int) -> SceneResult:
+    async def start(self, vk_id: int) -> SceneResult:
         """Начинает сцену"""
-        context = SceneContext(user_id=user_id, scene_id=self.scene_id)
-        self._active_sessions[user_id] = context
-        return await self.on_enter(user_id, context)
+        context = SceneContext(vk_id=vk_id, scene_id=self.scene_id)
+        self._active_sessions[vk_id] = context
+        return await self.on_enter(vk_id, context)
 
-    def end(self, user_id: int):
+    def end(self, vk_id: int):
         """Завершает сцену без вызова on_exit"""
-        if user_id in self._active_sessions:
-            del self._active_sessions[user_id]
+        if vk_id in self._active_sessions:
+            del self._active_sessions[vk_id]
 
-    async def finish(self, user_id: int) -> str:
+    async def finish(self, vk_id: int) -> str:
         """Завершает сцену с вызовом on_exit"""
-        context = self.get_context(user_id)
+        context = self.get_context(vk_id)
         if not context:
             return "Сцена не найдена."
 
-        exit_message = await self.on_exit(user_id, context)
-        self.end(user_id)
+        exit_message = await self.on_exit(vk_id, context)
+        self.end(vk_id)
         return exit_message
 
-    async def process_message(self, user_id: int, text: str) -> tuple[bool, str]:
+    async def process_message(self, vk_id: int, text: str) -> tuple[bool, str]:
         """Обрабатывает сообщение"""
-        context = self.get_context(user_id)
+        context = self.get_context(vk_id)
         if not context:
             return False, "У вас нет активной сцены"
 
-        is_completed, response = await self.on_message(user_id, text, context)
+        is_completed, response = await self.on_message(vk_id, text, context)
 
         if is_completed:
-            exit_message = await self.finish(user_id)
+            exit_message = await self.finish(vk_id)
             return True, f"{response}\n\n{exit_message}"
 
         return False, response
