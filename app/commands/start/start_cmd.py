@@ -3,10 +3,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.commands.base.base_command import Command, CommandResult
+from app.commands.dependencies import CommandFactory
 from app.commands.help.help_command import HelpCommand
-from app.commands.join.join_command import JoinCommand
 from app.commands.start.start_scene import StartScene
-from app.domain.family import Family
 from app.errors.invalid_login_error import InvalidLoginError
 from app.errors.lack_of_data_error import LackOfDataError
 from app.handlers.session_storage import SessionStorage
@@ -31,13 +30,18 @@ class StartCommand(Command):
         password_service: PasswordService,
         family_service: FamilyService,
         session: SessionStorage,
+        command_factory: CommandFactory,
     ):
         super().__init__()
         self._login_service = login_service
         self._password_service = password_service
         self._family_service = family_service
         self.scene = StartScene(
-            family_service, login_service, password_service, session
+            family_service=family_service,
+            login_service=login_service,
+            password_service=password_service,
+            session=session,
+            command_factory=command_factory,
         )
         self._next_command = None
 

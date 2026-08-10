@@ -2,10 +2,7 @@ from enum import Enum, auto
 
 from app.commands.base.base_scene_command import Scene, SceneContext, SceneState
 from app.commands.base.scene_result import SceneResult
-from app.commands.create_family.create_family_cmd import CreateFamilyCmd
-from app.commands.help.help_command import HelpCommand
-from app.commands.join.join_command import JoinCommand
-from app.commands.server_error_command import ServerErrorCommand
+from app.commands.dependencies import CommandFactory
 from app.handlers.session_storage import SessionStorage
 from app.services.family_service import FamilyService
 from app.services.login_service import LoginService
@@ -29,16 +26,18 @@ class StartScene(Scene):
 
     def __init__(
         self,
+        password_service: PasswordService,
         family_service: FamilyService,
         login_service: LoginService,
-        password_service: PasswordService,
         session: SessionStorage,
+        command_factory: CommandFactory,
     ):
         super().__init__("start_scene")
         self._family_service = family_service
         self._login_service = login_service
-        self._password_service = password_service
         self.session = session
+        self._password_service = password_service
+        self.command_factory = command_factory
 
     # 1 есть ли у чата зарегестрированная семья
     # 2 если есть -> зарегестрирован ли вошедший в бота
@@ -64,7 +63,9 @@ class StartScene(Scene):
             next_command=None,
         )
 
-    async def on_message(self, vk_id: int, text: str, context: SceneContext):
+    async def on_message(
+        self, vk_id: int, text: str, context: SceneContext
+    ) -> SceneResult:
         """Обработка сообщений в сцене"""
 
         # Проверка на отмену
@@ -87,31 +88,26 @@ class StartScene(Scene):
                 if auth_user:
                     return SceneResult(
                         completed=True,
-                        message="Вы уже зарегестрированы в бота",
-                        next_command=HelpCommand(),
+                        message="Вы уже зарегестрированы в бота. Ниже справка по командам",
+                        next_command=self.command_factory.get_command("help"),
                     )
                 else:
                     return SceneResult(
                         completed=True,
                         message="Вы не авторизованы",
-                        next_command=JoinCommand(self._password_service),
+                        next_command=self.command_factory.get_command("join"),
                     )
             else:
                 return SceneResult(
                     completed=True,
                     message="Такая семья не существует в базе",
-                    next_command=CreateFamilyCmd(
-                        self._login_service,
-                        self._password_service,
-                        self._family_service,
-                        self.session,
-                    ),
+                    next_command=self.command_factory.get_command("create_family"),
                 )
 
         return SceneResult(
             completed=True,
             message="⚠️ Произошла ошибка. Попробуйте позже.",
-            next_command=ServerErrorCommand(),
+            next_command=self.command_factory.get_command("error"),
         )
 
     async def on_exit(self, vk_id: int, context: SceneContext) -> str:
