@@ -1,3 +1,6 @@
+# Команда Join
+
+
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -9,17 +12,6 @@ from app.errors.invalid_login_error import InvalidLoginError
 from app.errors.lack_of_data_error import LackOfDataError
 from app.errors.resource_not_found_error import ResourceNotFoundError
 from app.services.password_service import PasswordService
-
-
-# Команда ServerError
-@pytest.mark.asyncio
-async def test_server_error_cmd():
-    server_error_cmd = ServerErrorCommand()
-    cmd_result = await server_error_cmd.execute({})
-    assert cmd_result.success is True
-
-
-# Команда Join
 
 
 @pytest.mark.asyncio
