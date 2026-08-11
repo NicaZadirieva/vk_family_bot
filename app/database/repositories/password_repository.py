@@ -12,22 +12,10 @@ class PasswordRepository:
         self.db_session = db_session
         self.model = AuthUsers
 
-    # TODO: реализовать метод поиска юзера среди зарегестрированных модератором семьи
-    async def search_register_user(self, user_id: int, family_id: int):
-        # TODO: тестовый юзер
-        return User(
-            id=1,
-            vk_id=2,
-            role=UserRole.CHILD,
-            username="Ника",
-            family_id=1234,
-            child_profile_id=344545,
-        )
-
-    async def get_hash(self, joinContext: JoinContext):
+    # TODO: нужен ли vk_id для поиска
+    async def get_hash(self, user_id: int, vk_id: int, family_id: int):
         stmt = select(self.model.password_hash).where(
-            self.model.family_id == joinContext.family_id,
-            self.model.user_id == joinContext.user_id,
+            self.model.family_id == family_id, self.model.user_id == user_id
         )
         result = await self.db_session.execute(stmt)
         password_hash = result.scalar_one_or_none()

@@ -4,7 +4,7 @@ from app.commands.dependencies import CommandDependencies, CommandFactory
 from app.commands.start.start_cmd import StartCommand
 from app.handlers.session_storage import SessionStorage
 from app.services.family_service import FamilyService
-from app.services.login_service import LoginService
+from app.services.auth_service import LoginService
 from app.services.password_service import PasswordService
 
 

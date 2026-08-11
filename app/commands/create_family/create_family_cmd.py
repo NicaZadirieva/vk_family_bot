@@ -4,7 +4,7 @@ from app.commands.base.base_command import Command, CommandResult
 from app.commands.create_family.create_family_scene import CreateFamilyScene
 from app.handlers.session_storage import SessionStorage
 from app.services.family_service import FamilyService
-from app.services.login_service import LoginService
+from app.services.auth_service import LoginService
 from app.services.password_service import PasswordService
 
 

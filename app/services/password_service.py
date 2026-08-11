@@ -1,43 +1,70 @@
+import logging
+from dataclasses import dataclass
+from enum import Enum
+
 from passlib.context import CryptContext
 
-from app.core.join_context import JoinContext
 from app.database.repositories.password_repository import PasswordRepository
-from app.errors.resource_not_found_error import ResourceNotFoundError
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+class VerificationResult(Enum):
+    """Результат верификации пароля."""
+
+    SUCCESS = "success"
+    USER_NOT_FOUND = "user_not_found"
+    INVALID_PASSWORD = "invalid_password"
+    NEEDS_REHASH = "needs_rehash"
+    INTERNAL_ERROR = "internal_error"
+
+
+@dataclass
+class PasswordVerification:
+    """Результат проверки пароля."""
+
+    result: VerificationResult
+    needs_rehash: bool = False
+    user_id: int | None = None
+
+
+logger = logging.getLogger(__name__)
 
 
 class PasswordService:
-    """Сервис для работы с паролями (Domain Service)"""
-
-    @staticmethod
-    def hash(plain_password: str) -> str:
-        """Хеширует пароль"""
-        return pwd_context.hash(plain_password)
-
-    @staticmethod
-    def verify(plain_password: str, password_hash: str) -> bool:
-        """Проверяет пароль"""
-        return pwd_context.verify(plain_password, password_hash)
-
-    @staticmethod
-    def needs_rehash(password_hash: str) -> bool:
-        """Проверяет, нужно ли обновить хеш"""
-        return pwd_context.needs_update(password_hash)
-
     def __init__(self, password_repo: PasswordRepository):
         self._password_repo = password_repo
+        self._pwd_context = CryptContext(
+            schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12
+        )
 
-    async def verify_user(self, joinContext: JoinContext):
-        hash: str | None = await self._password_repo.get_hash(joinContext)
-        if not hash:
-            raise ResourceNotFoundError(
-                "Пользователь с текущими данными не найден для верификации",
-                {
-                    "user_id": joinContext.user_id,
-                    "vk_id": joinContext.vk_id,
-                    "family_id": joinContext.family_id,
-                },
+    async def verify_user(
+        self, user_id: int, vk_id: int, family_id: int, password: str
+    ) -> PasswordVerification:
+        """
+        Проверяет пароль пользователя.
+
+        Returns:
+            PasswordVerification: Результат проверки
+        """
+        try:
+            stored_hash = await self._password_repo.get_hash(user_id, vk_id, family_id)
+
+            if not stored_hash:
+                return PasswordVerification(result=VerificationResult.USER_NOT_FOUND)
+
+            is_valid = self._pwd_context.verify(password, stored_hash)
+
+            if not is_valid:
+                return PasswordVerification(result=VerificationResult.INVALID_PASSWORD)
+
+            # Проверяем, нужно ли перехешировать
+            needs_rehash = self._pwd_context.needs_update(stored_hash)
+
+            return PasswordVerification(
+                result=VerificationResult.SUCCESS,
+                needs_rehash=needs_rehash,
+                user_id=user_id,
             )
 
-        return PasswordService.verify(joinContext.password, hash)
+        except Exception as e:
+            logger.error(f"Password verification error: {e}", exc_info=True)
+            return PasswordVerification(result=VerificationResult.INTERNAL_ERROR)
