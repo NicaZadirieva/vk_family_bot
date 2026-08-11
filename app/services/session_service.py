@@ -8,6 +8,10 @@ class SessionService:
     def __init__(self, cache_storage: ICacheStorage):
         self._cache_storage = cache_storage
 
+
+    def get_session_by_user(self, user_id: int):
+        
+
     async def start_new_session(self, user_id: int, ttl: int = 3_600):
         # Очищаем старую сессию
         await self._cache_storage.clear_user_session(user_id)

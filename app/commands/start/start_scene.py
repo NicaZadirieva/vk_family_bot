@@ -157,10 +157,12 @@ class StartScene(Scene):
                     message="⚠️ Ошибка: семья не найдена",
                     next_command=self._command_factory.get_command("help"),
                 )
+            user_id = 
 
             is_valid = await self._password_service.verify_user(
                 vk_id=vk_id, family_id=family_id, password=text,
-                family_id=family_id
+                family_id=family_id,
+                user_id=session.
             )
 
             if is_valid:
