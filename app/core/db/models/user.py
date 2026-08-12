@@ -1,12 +1,15 @@
-from sqlalchemy import Enum, ForeignKey, String
-from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db.models.base import Base
+from app.core.db.models.permission import Permission
 from app.core.db.models.role import Role
 
 
 class User(Base):
-    __tablename__ = "user"
+    __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     vk_id: Mapped[str] = mapped_column(String(100), nullable=True)
@@ -17,3 +20,17 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     timezone: Mapped[str] = mapped_column(String(50), default="Москва +3")
     role: Mapped[Role] = mapped_column(Enum(Role, name="role_enum"), nullable=True)
+
+    permission: Mapped[Permission] = mapped_column(
+        Enum(Permission, name="permission_enum"),
+        nullable=False,
+        default=Permission.USER,
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    invited_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
+    password_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+
+    # Связи
+    invited_by = relationship("User", remote_side=[id])
+    invites_created = relationship("Invite", back_populates="creator")
