@@ -38,11 +38,3 @@ class Event(Base):
 
     created_by = Column(Integer, nullable=False)  # vk_id
     deleted_at = Column(DateTime, nullable=True)
-
-    # Связь с моделью ChildProfile (если она есть)
-    # child_profile = relationship("ChildProfile", back_populates="events")
-
-    def __repr__(self):
-        return (
-            f"<Event(id={self.id}, title='{self.title}', type={self.event_type.value})>"
-        )
