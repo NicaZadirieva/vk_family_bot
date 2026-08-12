@@ -1,9 +1,13 @@
-from dataclasses import dataclass
-from datetime import datetime
+from app.core.schemas.role import Role
 
 
-@dataclass
 class User:
+    __tablename__ = "user"
+
     id: int
+    vk_id: str
     name: str
-    created_at: datetime
+    timezone: str = "Москва +3"
+    family_id: int | None = None
+    child_profile_id: int | None = None
+    role: Role | None = None
