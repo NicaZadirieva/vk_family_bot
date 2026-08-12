@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from app.bot import Bot
-from app.database import async_session
+from app.core.db.session import async_session
 from app.utils.logs_util import LoggerUtils
 
 logger = logging.getLogger(__name__)

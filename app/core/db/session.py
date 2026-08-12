@@ -1,8 +1,7 @@
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from app.settings import Settings
-
-settings = Settings()  # type: ignore[call-arg]
+from app import settings
+from app.settings import settings  # noqa: F811
 
 engine = create_async_engine(
     settings.db.DATABASE_URL,
