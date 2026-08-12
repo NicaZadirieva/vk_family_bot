@@ -8,7 +8,6 @@ from sqlalchemy import (
     Integer,
     String,
 )
-from sqlalchemy.ext.declarative import declarative_base
 
 from app.core.db.models.base import Base
 from app.core.db.models.event_type import EventType
