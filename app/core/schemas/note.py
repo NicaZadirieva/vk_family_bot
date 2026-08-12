@@ -20,3 +20,6 @@ class Note:
 
     deleted_at: datetime | None = None
     """Дата удаления (мягкое удаление)"""
+
+    can_read_by_all: bool = True
+    """Для общего пользования (все могут читать)"""

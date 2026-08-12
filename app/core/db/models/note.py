@@ -23,5 +23,7 @@ class Note(Base):
 
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
+    can_read_by_all = Column(Boolean, default=True)
+
     deleted_at = Column(DateTime, nullable=True)
     """Дата удаления (мягкое удаление)"""
