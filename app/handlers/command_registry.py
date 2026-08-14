@@ -1,5 +1,7 @@
 import logging
-from typing import Callable  # noqa: UP035
+from typing import Callable
+
+from app.commands.base import ICommand  # noqa: UP035
 
 logger = logging.getLogger(__name__)
 
@@ -9,24 +11,24 @@ class CommandRegistry:
     Простой реестр команд с поддержкой алиасов.
     """
 
-    _commands: dict[str, Callable] = {}
+    _commands: dict[str, ICommand] = {}
     _aliases: dict[str, str] = {}  # алиас -> основное имя команды
 
     @classmethod
-    def register(cls, handler: Callable, name: str, aliases: list[str] | None = None):
+    def register(cls, command: ICommand, name: str, aliases: list[str] | None = None):
         """
         Регистрация обработчика команды.
 
         Args:
-            handler: Асинхронная функция-обработчик
+            command: команда
             name: Основное имя команды
             aliases: Список алиасов (дополнительных имен)
 
         Example:
-            CommandRegistry.register(handle_start, "start", ["старт", "привет"])
+            CommandRegistry.register(HelpCmd(), "start", ["старт", "привет"])
         """
         # Регистрируем основную команду
-        cls._commands[name] = handler
+        cls._commands[name] = command
         logger.debug(f"Зарегистрирована команда: {name}")
 
         # Регистрируем алиасы
@@ -36,12 +38,12 @@ class CommandRegistry:
                 logger.debug(f"Алиас '{alias}' -> '{name}'")
 
     @classmethod
-    def get_handler(cls, command: str) -> Callable | None:
+    def get_handler(cls, command: str) -> ICommand | None:
         """
         Получение обработчика по имени команды или алиасу.
 
         Returns:
-            Callable или None, если команда не найдена
+            ICommand или None, если команда не найдена
         """
         # Сначала ищем прямую команду
         if command in cls._commands:

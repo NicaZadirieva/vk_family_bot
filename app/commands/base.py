@@ -1,8 +1,10 @@
-from typing import Any, Protocol
+from abc import ABC
+from typing import Any
 
 
-class ICommand(Protocol):
-    def set_next(self, command: "ICommand") -> "ICommand": ...
-    def set_previous(self, command: "ICommand") -> "ICommand": ...
+class ICommand(ABC):
+    def __init__(self, presenter):
+        self.presenter = presenter
+
     def execute(self) -> Any: ...
     def undo(self) -> Any: ...
