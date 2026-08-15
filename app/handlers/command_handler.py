@@ -10,16 +10,10 @@ from app.core.schemas.family import Family
 from app.core.services.family import FamilyService
 from app.exceptions.not_found_error import NotFoundError
 from app.handlers.command_registry import CommandRegistry
+from app.handlers.user_info import UserInfo
 from app.presenter import Presenter
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class UserInfo:
-    vk_id: str | None
-    family: Family | None
-    link: str | None
 
 
 class CmdHandler:
@@ -92,8 +86,7 @@ class CmdHandler:
         return None
 
     async def _handle_command_name(
-        self, command_name: str, user_info: UserInfo
-    ) -> ICommand | None:
+        self, command_name: str, user_info: UserInfo)
         """
         Обрабатывает имя команды и возвращает экземпляр команды.
         """
@@ -109,4 +102,4 @@ class CmdHandler:
             # Если не получается создать экземпляр, возвращаем как есть
             return command_class
         except NotFoundError:
-            return CreateFamilyCmd(self._presenter)
+            return CreateFamilyCmd(self._presenter, user_info)
