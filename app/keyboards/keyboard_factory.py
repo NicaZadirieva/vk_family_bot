@@ -17,7 +17,7 @@ class KeyboardFactory:
             Dict с клавиатурой или None
         """
         # Карта соответствия screen_type -> функция создания
-        keyboards = {}
+        keyboards = {"start": KeyboardFactory._start}
 
         # Возвращаем клавиатуру или None (без клавиатуры)
         if screen_type in keyboards:
@@ -25,6 +25,10 @@ class KeyboardFactory:
 
         # По умолчанию - только "Назад"
         return KeyboardFactory._back_only()
+
+    @staticmethod
+    def _start():
+        return KeyboardFactory._btn("Начать", "start")
 
     @staticmethod
     def _btn(label: str, action: str, color: str = "secondary") -> Dict[str, Any]:

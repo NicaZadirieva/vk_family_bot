@@ -94,7 +94,11 @@ class CreateFamilyCmd(ICommand):
 
             # Очищаем состояние
             await self._clear_user_state(self.user_info.vk_id)  # type: ignore
-
+            await self.presenter.show(
+                self.user_info.vk_id,
+                text="Нажмите Старт, чтобы начать",
+                screen_type="start",
+            )
         except ValueError as e:
             await self.presenter.show_only_text(
                 vk_id=self.user_info.vk_id,
