@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from app.command_handler import CmdHandler
+from app.handlers.command_handler import CmdHandler
 from app.presenter import Presenter
 from app.scheduler import Scheduler
 from app.vk_api.vk_client import VKClient

@@ -7,3 +7,4 @@ class Family:
     id: int
     name: str
     created_at: datetime
+    link: str
