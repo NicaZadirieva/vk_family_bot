@@ -97,9 +97,9 @@ class CmdHandler:
 
         try:
             user_info.family = await self._service.get_family_by_link(user_info.link)
-            return command_class(self._presenter, user_info)  # type: ignore
+            return command_class(self._presenter, user_info, self._service)  # type: ignore
         except TypeError:
             # Если не получается создать экземпляр, возвращаем как есть
             return command_class
         except NotFoundError:
-            return CreateFamilyCmd(self._presenter, user_info)
+            return CreateFamilyCmd(self._presenter, user_info, family_service=self._service)
