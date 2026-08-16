@@ -11,11 +11,13 @@ class CommandRegistry:
     Простой реестр команд с поддержкой алиасов.
     """
 
-    _commands: dict[str, ICommand] = {}
+    _commands: dict[str, type[ICommand]] = {}
     _aliases: dict[str, str] = {}  # алиас -> основное имя команды
 
     @classmethod
-    def register(cls, command: ICommand, name: str, aliases: list[str] | None = None):
+    def register(
+        cls, command: type[ICommand], name: str, aliases: list[str] | None = None
+    ):
         """
         Регистрация обработчика команды.
 
@@ -38,7 +40,7 @@ class CommandRegistry:
                 logger.debug(f"Алиас '{alias}' -> '{name}'")
 
     @classmethod
-    def get_handler(cls, command: str) -> ICommand | None:
+    def get_handler(cls, command: str) -> type[ICommand] | None:
         """
         Получение обработчика по имени команды или алиасу.
 

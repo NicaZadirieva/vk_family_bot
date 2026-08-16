@@ -12,69 +12,116 @@ logger = logging.getLogger(__name__)
 class Bot:
     """Основной класс бота"""
 
-    def __init__(self, client: VKClient, presenter: Presenter, scheduler: Scheduler):
-        self.client = client
+    def __init__(
+        self,
+        vk_client: VKClient,
+        presenter: Presenter,
+        scheduler: Scheduler,
+        cmd_handler: CmdHandler,
+    ):
+        self.client = vk_client
         self.presenter = presenter
         self.scheduler = scheduler
-        self.handler = CmdHandler(presenter)
+        self.handler = cmd_handler
         self._running = False
-
-    def start(self) -> None:
-        """Запуск бота (синхронный метод)"""
-        try:
-            asyncio.run(self._start_async())
-        except KeyboardInterrupt:
-            logger.info("Бот остановлен пользователем")
-            self.stop()
-        except Exception as e:
-            logger.critical(f"Ошибка при запуске бота: {e}", exc_info=True)
-            raise
 
     def stop(self) -> None:
         """Остановка бота"""
         self._running = False
         logger.info("Бот останавливается...")
 
-    async def _start_async(self) -> None:
-        """Асинхронный запуск"""
+    async def start(self):
+        """Запуск бота"""
         self._running = True
-        logger.info("VK бот запускается...")
-        await self.scheduler.start()
+        logger.info("🚀 Бот запущен")
+
+        # Получаем данные для LongPoll
+        try:
+            self._longpoll_data = await self.client.get_longpoll_server()
+            logger.info(
+                f"✅ LongPoll данные получены: {self._longpoll_data.get('key')}"
+            )
+        except Exception as e:
+            logger.error(f"❌ Ошибка получения LongPoll данных: {e}")
+            raise
+
+        # Запускаем планировщик
+        asyncio.create_task(self.scheduler.start())
+
+        # Запускаем обработку сообщений
+        self._task = asyncio.create_task(self._poll_messages())
 
         try:
-            lp_data = await self.client.get_longpoll_server()
-            server = lp_data.get("server")
-            if not server:
-                raise RuntimeError("LongPoll server not found")
-
-            key = lp_data["key"]
-            ts = lp_data["ts"]
-            logger.info(f"LongPoll подключён. server={server}")
-
-            while self._running:
-                events = await self.client.poll_events(server, key, ts)
-
-                if "failed" in events:
-                    if events.get("failed") == 1:
-                        ts = events.get("ts", ts)
-                    else:
-                        lp_data = await self.client.get_longpoll_server()
-                        server = lp_data["server"]
-                        key = lp_data["key"]
-                        ts = lp_data["ts"]
-                    continue
-
-                ts = events["ts"]
-                for update in events.get("updates", []):
-                    command = await self.handler._handle_update(update)
-                    if command:
-                        await command.execute()
-
+            await self._task
         except asyncio.CancelledError:
-            logger.info("LongPoll цикл отменён")
-        except Exception as e:
-            logger.critical(f"Ошибка в longpoll: {e}", exc_info=True)
-        finally:
-            await self.scheduler.shutdown()
-            await self.client.close()
-            logger.info("VK бот остановлен")
+            logger.info("Задача обработки сообщений отменена")
+            raise
+
+    async def _poll_messages(self):
+        """Основной цикл опроса LongPoll"""
+        logger.info("🔄 Начинаем опрос LongPoll...")
+
+        ts = self._longpoll_data.get("ts")
+        key = self._longpoll_data.get("key")
+        server = self._longpoll_data.get("server")
+
+        if not all([ts, key, server]):
+            logger.error("❌ Неполные данные LongPoll")
+            return
+
+        while self._running:
+            try:
+                # Опрашиваем LongPoll сервер
+                data = await self.client.poll_events(server, key, ts, wait=25)  # type: ignore
+
+                # Проверяем ошибки
+                if "failed" in data:
+                    failed_code = data["failed"]
+                    logger.warning(f"⚠️ LongPoll ошибка: {failed_code}")
+
+                    if failed_code == 1:
+                        # История устарела, просто обновляем ts
+                        ts = data.get("ts", ts)
+                        logger.info(f"🔄 Обновлен ts: {ts}")
+                        continue
+                    elif failed_code == 2:
+                        # Ключ истек, получаем новый
+                        logger.info("🔄 Ключ истек, получаем новый...")
+                        longpoll_data = await self.client.get_longpoll_server()
+                        key = longpoll_data.get("key")
+                        server = longpoll_data.get("server")
+                        ts = longpoll_data.get("ts")
+                        continue
+                    elif failed_code == 3:
+                        # Информация потеряна, получаем новую
+                        logger.info("🔄 Информация потеряна, получаем новую...")
+                        longpoll_data = await self.client.get_longpoll_server()
+                        key = longpoll_data.get("key")
+                        server = longpoll_data.get("server")
+                        ts = longpoll_data.get("ts")
+                        continue
+                    else:
+                        logger.error(f"❌ Неизвестная ошибка LongPoll: {failed_code}")
+                        await asyncio.sleep(1)
+                        continue
+
+                # Обновляем ts
+                ts = data.get("ts", ts)
+
+                # Обрабатываем обновления
+                updates = data.get("updates", [])
+                if updates:
+                    logger.info(f"📨 Получено {len(updates)} обновлений")
+
+                    for update in updates:
+                        await self.handler._handle_update(update)
+
+                # Небольшая пауза, чтобы не нагружать сервер
+                await asyncio.sleep(0.1)
+
+            except asyncio.CancelledError:
+                logger.info("Опрос LongPoll остановлен")
+                break
+            except Exception as e:
+                logger.error(f"❌ Ошибка в цикле LongPoll: {e}", exc_info=True)
+                await asyncio.sleep(1)

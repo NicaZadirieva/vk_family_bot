@@ -10,7 +10,7 @@ class PointsTransaction(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     child_profile_id = Column(
-        Integer, ForeignKey("child_profiles.id"), nullable=False, index=True
+        Integer, ForeignKey("child_profile.id"), nullable=False, index=True
     )
     amount = Column(Integer, nullable=False)  # Может быть отрицательным
     transaction_type = Column(Enum(TransactionType), nullable=False)

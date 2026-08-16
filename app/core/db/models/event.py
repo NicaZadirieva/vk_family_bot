@@ -14,7 +14,7 @@ from app.core.db.models.event_type import EventType
 
 
 class Event(Base):
-    __tablename__ = "events"
+    __tablename__ = "event"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     family_id = Column(ForeignKey("family.id"), nullable=True)
@@ -30,7 +30,7 @@ class Event(Base):
     # {"frequency": "monthly", "day": 15, "interval": 1, "until": "2024-12-31"}
     recurrence_rule = Column(JSON, nullable=True)
 
-    child_profile_id = Column(Integer, ForeignKey("child_profiles.id"), nullable=True)
+    child_profile_id = Column(Integer, ForeignKey("child_profile.id"), nullable=True)
 
     # reminder_deltas: ["-1 day", "-30 minutes"]
     # или [{"days": 1}, {"minutes": 30}] в зависимости от формата

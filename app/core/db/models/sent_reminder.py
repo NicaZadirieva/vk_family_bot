@@ -18,7 +18,7 @@ class SentReminder(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     task_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
-    event_id = Column(Integer, ForeignKey("events.id"), nullable=True)
+    event_id = Column(Integer, ForeignKey("event.id"), nullable=True)
     reminder_type = Column(Enum(ReminderType), nullable=False)
     user_vk_id = Column(Integer, nullable=False, index=True)
     sent_at = Column(DateTime, server_default=func.now())

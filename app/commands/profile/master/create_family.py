@@ -9,10 +9,26 @@ from app.presenter import Presenter
 logger = logging.getLogger(__name__)
 
 
-class CreateFamilyCmd(ICommand):
-    # Класс-хранилище состояний
-    _user_states: dict[str, str] = {}
+class UserStateManager:
+    """Менеджер состояний пользователей."""
 
+    _states: dict[str, str] = {}
+
+    @classmethod
+    def set_state(cls, vk_id: str, state: str) -> None:
+        cls._states[vk_id] = state
+
+    @classmethod
+    def get_state(cls, vk_id: str) -> str | None:
+        return cls._states.get(vk_id)
+
+    @classmethod
+    def clear_state(cls, vk_id: str) -> None:
+        if vk_id in cls._states:
+            del cls._states[vk_id]
+
+
+class CreateFamilyCmd(ICommand):
     def __init__(
         self,
         presenter: Presenter,
@@ -22,66 +38,48 @@ class CreateFamilyCmd(ICommand):
     ):
         super().__init__(presenter)
         self.user_info = user_info
-        self.family_name = family_name
+        self.family_name = family_name.strip()  # Убираем пробелы
         self._family_service = family_service
 
-    async def _set_user_state(self, vk_id: str, state: str) -> None:
-        """Сохраняет состояние в памяти."""
-        self._user_states[vk_id] = state
-
-    async def _clear_user_state(self, vk_id: str) -> None:
-        """Очищает состояние в памяти."""
-        if vk_id in self._user_states:
-            del self._user_states[vk_id]
-
-    async def _get_user_state(self, vk_id: str) -> str | None:
-        """Получает состояние из памяти."""
-        return self._user_states.get(vk_id)
-
     async def execute(self) -> Any:
-        # Проверяем, не ждёт ли пользователь подтверждения
-        current_state = await self._get_user_state(self.user_info.vk_id)  # type: ignore
+        vk_id = str(self.user_info.vk_id)  # Приводим к строке
+        current_state = UserStateManager.get_state(vk_id)
 
+        # Если пользователь в процессе ввода имени
         if current_state == "waiting_family_name":
-            # Если пользователь уже в процессе, используем введённое имя
             if self.family_name:
+                # Если введено имя - создаём семью
+                await UserStateManager.clear_state(vk_id)  # type: ignore
                 return await self._create_family()
             else:
+                # Если пустое сообщение - повторяем запрос
                 await self.presenter.show_only_text(
                     vk_id=self.user_info.vk_id,
-                    text="Пожалуйста, введите название семьи",
+                    text="Пожалуйста, введите название семьи (не оставляйте пустым)",
                 )
                 return
 
+        # Если имя не передано - запрашиваем
         if not self.family_name:
-            # Запрашиваем имя семьи
-            await self._set_user_state(self.user_info.vk_id, "waiting_family_name")  # type: ignore
+            UserStateManager.set_state(vk_id, "waiting_family_name")
             await self.presenter.show_only_text(
                 vk_id=self.user_info.vk_id,
                 text="Введите уникальное название для Вашей семьи",
             )
             return
 
-        # Если имя передано сразу
+        # Если имя передано сразу - создаём семью
         return await self._create_family()
 
     async def _create_family(self) -> None:
         """Создаёт семью с полученным именем."""
+        vk_id = str(self.user_info.vk_id)
+
         try:
             if not self._family_service:
                 raise ValueError("FamilyService не инициализирован")
 
-            # Проверяем, не занято ли имя
-            # existing_family = await self._family_service.get_family_by_name(
-            #    self.family_name
-            # )
-            # if existing_family:
-            #    await self.presenter.show_only_text(
-            #        vk_id=self.user_info.vk_id,
-            #        text=f"❌ Семья с именем '{self.family_name}' уже существует. Пожалуйста, выберите другое имя.",
-            #    )
-            #    return
-
+            # Создаём семью
             await self._family_service.create(
                 name=self.family_name,
                 link=self.user_info.link,  # type: ignore
@@ -93,16 +91,19 @@ class CreateFamilyCmd(ICommand):
             )
 
             # Очищаем состояние
-            await self._clear_user_state(self.user_info.vk_id)  # type: ignore
+            UserStateManager.clear_state(vk_id)
+
+            # Показываем меню добавления
             await self.presenter.show(
                 self.user_info.vk_id,
                 text="Нажмите добавить родителя или ребенка",
                 screen_type="add",
             )
+
         except ValueError as e:
             await self.presenter.show_only_text(
                 vk_id=self.user_info.vk_id,
-                text=f"❌ {str(e)}",  # noqa: RUF010
+                text=f"❌ {str(e)}",
             )
         except Exception as e:
             logger.error(f"Ошибка при создании семьи: {e}")
