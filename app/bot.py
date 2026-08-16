@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import sys
 
 from app.handlers.command_handler import CmdHandler
 from app.presenter import Presenter
@@ -35,8 +36,12 @@ class Bot:
         self._running = True
         logger.info("🚀 Бот запущен")
 
-        # Получаем данные для LongPoll
         try:
+            # Проверяем настройки LongPoll
+            settings = await self.client.check_longpoll_settings()
+            logger.info(f"📋 Настройки LongPoll: {settings}")
+
+            # Получаем данные для LongPoll
             self._longpoll_data = await self.client.get_longpoll_server()
             logger.info(
                 f"✅ LongPoll данные получены: {self._longpoll_data.get('key')}"
@@ -60,6 +65,8 @@ class Bot:
     async def _poll_messages(self):
         """Основной цикл опроса LongPoll"""
         logger.info("🔄 Начинаем опрос LongPoll...")
+        print("🔄 === НАЧАЛО ОПРОСА LONGPOLL ===")
+        sys.stdout.flush()
 
         ts = self._longpoll_data.get("ts")
         key = self._longpoll_data.get("key")
@@ -71,8 +78,14 @@ class Bot:
 
         while self._running:
             try:
+                print(f"🔄 === ЦИКЛ ОПРОСА, _running={self._running} ===")
+                sys.stdout.flush()
+
                 # Опрашиваем LongPoll сервер
                 data = await self.client.poll_events(server, key, ts, wait=25)  # type: ignore
+
+                print(f"📦 === ПОЛУЧЕНЫ ДАННЫЕ: {data.get('updates', [])} ===")
+                sys.stdout.flush()
 
                 # Проверяем ошибки
                 if "failed" in data:
@@ -111,9 +124,12 @@ class Bot:
                 # Обрабатываем обновления
                 updates = data.get("updates", [])
                 if updates:
-                    logger.info(f"📨 Получено {len(updates)} обновлений")
+                    print(f"📨 === ПОЛУЧЕНО {len(updates)} ОБНОВЛЕНИЙ ===")
+                    sys.stdout.flush()
 
                     for update in updates:
+                        print(f"📨 === ОБНОВЛЕНИЕ: {update} ===")
+                        sys.stdout.flush()
                         await self.handler._handle_update(update)
 
                 # Небольшая пауза, чтобы не нагружать сервер

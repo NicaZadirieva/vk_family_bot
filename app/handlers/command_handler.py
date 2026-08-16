@@ -1,6 +1,7 @@
 import json
 import logging
 from dataclasses import dataclass
+import sys
 from typing import Any
 
 from app.commands.base import ICommand
@@ -20,11 +21,20 @@ class CmdHandler:
     def __init__(self, presenter: Presenter, family_service: FamilyService):
         self._presenter = presenter
         self._service = family_service
+        print("🔧 === CmdHandler ИНИЦИАЛИЗИРОВАН ===")
+        sys.stdout.flush()
 
     async def _handle_update(self, update: dict[str, Any]) -> ICommand | None:
+        print("🔧 === _handle_update ВЫЗВАН ===")
+        sys.stdout.flush()
+
+        print(f"🔧 === update: {update}")
+        sys.stdout.flush()
+
         logger.debug(update)
 
         update_type = update.get("type")
+        logger.debug(update_type)
         obj = update.get("object")
         if not obj:
             return None
@@ -41,6 +51,7 @@ class CmdHandler:
 
         if update_type == "message_new":
             command_name = message.get("text", "")
+            logger.debug(command_name)
             if command_name:
                 return await self._handle_command_name(
                     command_name, UserInfo(link=link, vk_id=vk_id, family=None)
@@ -91,7 +102,7 @@ class CmdHandler:
         """
 
         command_class = CommandRegistry.get_handler(command_name)
-
+        logger.debug(command_class)
         if not command_class or not user_info.link:
             return HelpCmd(self._presenter)
 
