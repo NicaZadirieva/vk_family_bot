@@ -24,8 +24,7 @@ class UserStateManager:
 
     @classmethod
     def clear_state(cls, vk_id: str) -> None:
-        if vk_id in cls._states:
-            del cls._states[vk_id]
+        cls._states.pop(vk_id, None)
 
 
 class CreateFamilyCmd(ICommand):
@@ -33,23 +32,23 @@ class CreateFamilyCmd(ICommand):
         self,
         presenter: Presenter,
         user_info: UserInfo,
+        family_service: FamilyService,
         family_name: str = "",
-        family_service: FamilyService | None = None,
     ):
         super().__init__(presenter)
         self.user_info = user_info
-        self.family_name = family_name.strip()  # Убираем пробелы
+        self.family_name = family_name.strip()
         self._family_service = family_service
 
     async def execute(self) -> Any:
-        vk_id = str(self.user_info.vk_id)  # Приводим к строке
+        vk_id = str(self.user_info.vk_id)
         current_state = UserStateManager.get_state(vk_id)
 
         # Если пользователь в процессе ввода имени
         if current_state == "waiting_family_name":
             if self.family_name:
                 # Если введено имя - создаём семью
-                await UserStateManager.clear_state(vk_id)  # type: ignore
+                UserStateManager.clear_state(vk_id)
                 return await self._create_family()
             else:
                 # Если пустое сообщение - повторяем запрос

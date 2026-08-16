@@ -13,6 +13,7 @@ from app.exceptions.not_found_error import NotFoundError
 from app.handlers.command_registry import CommandRegistry
 from app.handlers.user_info import UserInfo
 from app.presenter import Presenter
+from app.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,7 @@ class CmdHandler:
         if not vk_id:
             return None
 
-        link = self._get_chat_link(message)
+        link = self._get_chat_link(vk_id)
 
         if update_type == "message_new":
             command_name = message.get("text", "")
@@ -77,24 +78,8 @@ class CmdHandler:
 
         return None
 
-    def _get_chat_link(self, message: dict[str, Any]) -> str | None:
-        """
-        Получает ссылку на чат VK из сообщения.
-        """
-        peer_id = message.get("peer_id")
-        if not peer_id:
-            return None
-
-        # Если это личное сообщение (peer_id > 0 и < 2000000000)
-        if 0 < peer_id < 2000000000:
-            return f"https://vk.com/im?sel={peer_id}"
-
-        # Если это беседа (peer_id >= 2000000000)
-        elif peer_id >= 2000000000:
-            chat_id = peer_id - 2000000000
-            return f"https://vk.com/im?sel=c{chat_id}"
-
-        return None
+    def _get_chat_link(self, vk_id: str) -> str | None:
+        return f"vk.com/gim{settings.vk_app.VK_GROUP_ID}?sel={vk_id}"
 
     async def _handle_command_name(self, command_name: str, user_info: UserInfo):
         """
@@ -103,6 +88,7 @@ class CmdHandler:
 
         command_class = CommandRegistry.get_handler(command_name)
         logger.debug(command_class)
+        logger.debug(f"link:{user_info.link}")
         if not command_class or not user_info.link:
             return HelpCmd(self._presenter)
 

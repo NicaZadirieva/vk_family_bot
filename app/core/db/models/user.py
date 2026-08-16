@@ -30,7 +30,3 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     invited_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("user.id"))
     password_hash: Mapped[str] = mapped_column(String(128), nullable=False)
-
-    # Связи
-    invited_by = relationship("User", remote_side=[id])
-    invites_created = relationship("Invite", back_populates="creator")

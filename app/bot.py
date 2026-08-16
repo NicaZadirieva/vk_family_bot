@@ -130,7 +130,8 @@ class Bot:
                     for update in updates:
                         print(f"📨 === ОБНОВЛЕНИЕ: {update} ===")
                         sys.stdout.flush()
-                        await self.handler._handle_update(update)
+                        cmd = await self.handler._handle_update(update)
+                        await cmd.execute()  # type: ignore
 
                 # Небольшая пауза, чтобы не нагружать сервер
                 await asyncio.sleep(0.1)
