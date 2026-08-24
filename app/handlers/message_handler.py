@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Any
 
+from app.commands.help import HelpCmd
 from app.commands.start.start import StartCommand
 from app.core.di.services_container import ServicesContainer
 from app.core.repositories.base_user_state_repo import UserState
@@ -19,32 +20,20 @@ class MessageHandler:
         self.user_state_service = services.user_state_service()
         self.commands: dict[str, Any] = {}
         self.payload_handlers: dict[str, Any] = {}
-        logger.info("🔧 Инициализация MessageHandler...")
 
         self._register_commands()
         self._register_payload_handlers()
 
-        # Добавьте это логирование
-        logger.info(f"✅ Зарегистрированные команды: {list(self.commands.keys())}")
-        logger.info(
-            f"✅ Зарегистрированные payload handlers: {list(self.payload_handlers.keys())}"
-        )
-
     def _register_commands(self):
         logger.info("📝 Регистрация команд...")
 
-        commands = [
-            StartCommand(),
-        ]
+        commands = [StartCommand(), HelpCmd()]
 
         for cmd in commands:
-            logger.info(f"🔹 Регистрация команды: {cmd.name}")
             self.commands[cmd.name] = cmd
             if hasattr(cmd, "aliases"):
                 for alias in cmd.aliases:
                     self.commands[alias] = cmd
-
-        logger.info(f"✅ Команды зарегистрированы: {list(self.commands.keys())}")
 
     def _register_payload_handlers(self):
         payload_map = {
