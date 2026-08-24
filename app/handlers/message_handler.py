@@ -101,7 +101,15 @@ class MessageHandler:
             if result:
                 return result
 
-        # 2. Обработка состояния (приоритет 2)
+        # 3. Обработка текстовых команд (приоритет 2)
+        command_key = clean_text.lower()
+        logger.info(f"🔍 command_key: '{command_key}'")
+        logger.info(f"🔍 command_key in commands: {command_key in self.commands}")
+        if command_key in self.commands:
+            logger.info(f"✅ Выполняем команду: {command_key}")
+            return await self.commands[command_key].execute(user_id, state)
+
+        # 2. Обработка состояния (приоритет 3)
         from app.states import get_state
 
         state_handler = get_state(state.current_screen, self.services)
@@ -112,14 +120,6 @@ class MessageHandler:
             logger.info(
                 f"🔍 state_handler не найден для screen: {state.current_screen}"
             )
-
-        # 3. Обработка текстовых команд (приоритет 3)
-        command_key = clean_text.lower()
-        logger.info(f"🔍 command_key: '{command_key}'")
-        logger.info(f"🔍 command_key in commands: {command_key in self.commands}")
-        if command_key in self.commands:
-            logger.info(f"✅ Выполняем команду: {command_key}")
-            return await self.commands[command_key].execute(user_id, state)
 
         # 4. Обработка команд с / (приоритет 4)
         if clean_text.startswith("/"):
