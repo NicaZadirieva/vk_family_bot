@@ -5,7 +5,6 @@ from app.bot import Bot
 from app.commands.profile.master.create_family import CreateFamilyCmd
 from app.core.db.session import async_session  # Изменено с async_session
 from app.core.di.services_container import ServicesContainer
-from app.handlers.command_registry import CommandRegistry
 from app.utils.logs_util import LoggerUtils
 
 logger = logging.getLogger(__name__)
@@ -15,7 +14,6 @@ async def main():
     """Главная функция"""
     services_container = ServicesContainer()
     LoggerUtils.setup_logger()
-    CommandRegistry.register(CreateFamilyCmd, "create_family", ["создать семью"])
 
     # Создаем сессию и передаем в контейнер
     async with async_session() as session:

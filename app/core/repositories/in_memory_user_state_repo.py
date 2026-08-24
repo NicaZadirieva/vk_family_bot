@@ -6,7 +6,7 @@ class InMemoryUserStateRepo(IUserStateRepo):
         super().__init__()
         self._users_state: dict[UserId, UserState] = {}
 
-    async def clear(self):
+    async def clear_all_states(self):
         self._users_state.clear()
 
     async def get_user_state(self, user_id: UserId) -> UserState | None:

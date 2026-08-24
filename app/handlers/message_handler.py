@@ -19,17 +19,29 @@ class MessageHandler:
         self.user_state_service = services.user_state_service()
         self.commands: dict[str, Any] = {}
         self.payload_handlers: dict[str, Any] = {}
+        logger.info("🔧 Инициализация MessageHandler...")
+
         self._register_commands()
         self._register_payload_handlers()
 
+        # Добавьте это логирование
+        logger.info(f"✅ Зарегистрированные команды: {list(self.commands.keys())}")
+        logger.info(
+            f"✅ Зарегистрированные payload handlers: {list(self.payload_handlers.keys())}"
+        )
+
     def _register_commands(self):
+        logger.info("📝 Регистрация команд...")
 
         commands = [
             StartCommand(),
         ]
 
         for cmd in commands:
+            logger.info(f"🔹 Регистрация команды: {cmd.name}")
             self.commands[cmd.name] = cmd
+
+        logger.info(f"✅ Команды зарегистрированы: {list(self.commands.keys())}")
 
     def _register_payload_handlers(self):
         payload_map = {
@@ -47,10 +59,13 @@ class MessageHandler:
             logger.info(
                 f"📩 Получено сообщение от {user_id}: '{message_text}' (payload: {payload})"
             )
+            logger.info(f"🔍 Тип message_text: {type(message_text)}")
+            logger.info(f"🔍 repr(message_text): {repr(message_text)}")
 
             state = await self.user_state_service.get_or_create_user_state(
                 user_id, default_state=UserState(user_id)
             )
+            logger.info(f"🔍 Текущий screen пользователя: {state.current_screen}")
             response, screen_type = await self._process_message(
                 user_id, message_text, payload, state
             )
@@ -63,7 +78,22 @@ class MessageHandler:
     async def _process_message(
         self, user_id: int, message_text: str, payload: str | None, state: UserState
     ) -> tuple[str, str]:
+        # Удаляем невидимые символы
         clean_text = message_text.strip() if message_text else ""
+
+        logger.info(f"🔍 _process_message вызван")
+        logger.info(f"🔍 clean_text: '{clean_text}'")
+        logger.info(f"🔍 clean_text type: {type(clean_text)}")
+        logger.info(f"🔍 clean_text length: {len(clean_text)}")
+        logger.info(f"🔍 clean_text repr: {repr(clean_text)}")
+        logger.info(f"🔍 commands keys: {list(self.commands.keys())}")
+        logger.info(f"🔍 Проверка 'start' in commands: {'start' in self.commands}")
+        logger.info(
+            f"🔍 Проверка clean_text in commands: {clean_text in self.commands}"
+        )
+        logger.info(
+            f"🔍 Проверка clean_text.lower() in commands: {clean_text.lower() in self.commands}"
+        )
 
         # 1. Обработка payload (приоритет 1)
         if payload:
@@ -76,19 +106,30 @@ class MessageHandler:
 
         state_handler = get_state(state.current_screen, self.services)
         if state_handler:
+            logger.info(f"🔍 Найден state_handler: {state_handler}")
             return await state_handler.handle(user_id, clean_text, state)
+        else:
+            logger.info(
+                f"🔍 state_handler не найден для screen: {state.current_screen}"
+            )
 
         # 3. Обработка текстовых команд (приоритет 3)
         command_key = clean_text.lower()
+        logger.info(f"🔍 command_key: '{command_key}'")
+        logger.info(f"🔍 command_key in commands: {command_key in self.commands}")
         if command_key in self.commands:
+            logger.info(f"✅ Выполняем команду: {command_key}")
             return await self.commands[command_key].execute(user_id, state)
 
         # 4. Обработка команд с / (приоритет 4)
         if clean_text.startswith("/"):
             command_name = clean_text[1:].lower()
+            logger.info(f"🔍 command_name: '{command_name}'")
             if command_name in self.commands:
                 return await self.commands[command_name].execute(user_id, state)
-
+        logger.warning(
+            f"❌ Команда не найдена. clean_text: '{clean_text}', command_key: '{command_key}'"
+        )
         return MessageTemplates.UNKNOWN_COMMAND, "main"
 
     def __clear_payload_data__(self, payload_data: dict):
@@ -116,6 +157,7 @@ class MessageHandler:
 
         return None
 
+    # TODO: нарушение SOLID
     async def _send_response(self, user_id: int, text: str, screen_type: str) -> None:
         keyboard = KeyboardFactory.create(screen_type)
         await self.vk_client.send_message(user_id, text, keyboard=keyboard)
