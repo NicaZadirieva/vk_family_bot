@@ -1,10 +1,10 @@
 import asyncio
+import json
 import logging
-import sys
 
-from app.handlers.command_handler import CmdHandler
-from app.presenter import Presenter
-from app.scheduler import Scheduler
+from app.core.di.services_container import ServicesContainer
+from app.handlers.message_handler import MessageHandler
+from app.settings import settings
 from app.vk_api.vk_client import VKClient
 
 logger = logging.getLogger(__name__)
@@ -13,132 +13,177 @@ logger = logging.getLogger(__name__)
 class Bot:
     """Основной класс бота"""
 
-    def __init__(
-        self,
-        vk_client: VKClient,
-        presenter: Presenter,
-        scheduler: Scheduler,
-        cmd_handler: CmdHandler,
-    ):
-        self.client = vk_client
-        self.presenter = presenter
-        self.scheduler = scheduler
-        self.handler = cmd_handler
-        self._running = False
-
-    def stop(self) -> None:
-        """Остановка бота"""
-        self._running = False
-        logger.info("Бот останавливается...")
+    def __init__(self, services: ServicesContainer):
+        self.vk_client = VKClient(
+            token=settings.vk_app.VK_API_TOKEN,  # type: ignore
+        )
+        self.message_handler = MessageHandler(self.vk_client, services)
+        self.services = services
+        self.is_running = False
 
     async def start(self):
         """Запуск бота"""
-        self._running = True
-        logger.info("🚀 Бот запущен")
-
         try:
-            # Проверяем настройки LongPoll
-            settings = await self.client.check_longpoll_settings()
-            logger.info(f"📋 Настройки LongPoll: {settings}")
-
-            # Получаем данные для LongPoll
-            self._longpoll_data = await self.client.get_longpoll_server()
-            logger.info(
-                f"✅ LongPoll данные получены: {self._longpoll_data.get('key')}"
-            )
+            logger.info("🚀 Запуск бота...")
+            self.is_running = True
+            await self._listen_messages()
         except Exception as e:
-            logger.error(f"❌ Ошибка получения LongPoll данных: {e}")
+            logger.error(f"❌ Ошибка при запуске бота: {e}")
             raise
 
-        # Запускаем планировщик
-        asyncio.create_task(self.scheduler.start())
-
-        # Запускаем обработку сообщений
-        self._task = asyncio.create_task(self._poll_messages())
-
+    async def _listen_messages(self):
+        """Прослушивание входящих сообщений через LongPoll"""
+        logger.info("👂 Бот начал прослушивание сообщений...")
         try:
-            await self._task
+            lp_data = await self.vk_client.get_longpoll_server()
+            server = lp_data.get("server")
+            if not server:
+                logger.error(f"Invalid LongPoll response: {lp_data}")
+                raise RuntimeError("LongPoll server not found")
+
+            key = lp_data["key"]
+            ts = lp_data["ts"]
+            logger.info(f"✅ LongPoll подключен. server={server}, key={key}, ts={ts}")
+
+            while self.is_running:
+                events = await self.vk_client.poll_events(server, key, ts)
+
+                if "failed" in events:
+                    if events.get("failed") == 1:
+                        ts = events.get("ts", ts)
+                        logger.info(f"LongPoll: обновлен ts={ts}")
+                    else:
+                        logger.info("LongPoll: переподключение...")
+                        lp_data = await self.vk_client.get_longpoll_server()
+                        server = lp_data["server"]
+                        key = lp_data["key"]
+                        ts = lp_data["ts"]
+                    continue
+
+                ts = events["ts"]
+                for update in events.get("updates", []):
+                    await self._handle_update(update)
+
         except asyncio.CancelledError:
-            logger.info("Задача обработки сообщений отменена")
+            logger.info("LongPoll цикл отменён")
+        except Exception as e:
+            logger.error(f"❌ Ошибка в LongPoll: {e}", exc_info=True)
             raise
 
-    async def _poll_messages(self):
-        """Основной цикл опроса LongPoll"""
-        logger.info("🔄 Начинаем опрос LongPoll...")
-        print("🔄 === НАЧАЛО ОПРОСА LONGPOLL ===")
-        sys.stdout.flush()
+    async def _handle_update(self, update: dict):
+        """Обработка одного обновления от VK"""
+        try:
+            # Логируем ВСЕ обновления для отладки
+            logger.info(f"📨 Получено обновление: {update.get('type')}")
+            logger.debug(
+                f"Полное обновление: {json.dumps(update, ensure_ascii=False, default=str)[:500]}"
+            )
+            # Проверяем тип события
+            event_type = update.get("type")
 
-        ts = self._longpoll_data.get("ts")
-        key = self._longpoll_data.get("key")
-        server = self._longpoll_data.get("server")
+            # Обработка обычных сообщений
+            if event_type == "message_new":
+                logger.info("💬 Обработка нового сообщения...")
 
-        if not all([ts, key, server]):
-            logger.error("❌ Неполные данные LongPoll")
-            return
+                obj = update.get("object")
+                if not obj:
+                    logger.warning("⚠️ Объект сообщения пуст")
+                    return
 
-        while self._running:
-            try:
-                print(f"🔄 === ЦИКЛ ОПРОСА, _running={self._running} ===")
-                sys.stdout.flush()
+                message = obj.get("message")
+                if not message:
+                    logger.warning("⚠️ Поле message отсутствует")
+                    return
 
-                # Опрашиваем LongPoll сервер
-                data = await self.client.poll_events(server, key, ts, wait=25)  # type: ignore
+                user_id = message.get("from_id")
+                message_text = message.get("text", "")
+                payload = message.get("payload")
 
-                print(f"📦 === ПОЛУЧЕНЫ ДАННЫЕ: {data.get('updates', [])} ===")
-                sys.stdout.flush()
+                # Проверяем, что сообщение от пользователя
+                if user_id is None:
+                    logger.warning("⚠️ Сообщение без from_id")
+                    return
 
-                # Проверяем ошибки
-                if "failed" in data:
-                    failed_code = data["failed"]
-                    logger.warning(f"⚠️ LongPoll ошибка: {failed_code}")
+                if user_id < 0:
+                    logger.debug(
+                        f"ℹ️ Сообщение от группы/сервиса: {user_id}, игнорируем"
+                    )
+                    return
 
-                    if failed_code == 1:
-                        # История устарела, просто обновляем ts
-                        ts = data.get("ts", ts)
-                        logger.info(f"🔄 Обновлен ts: {ts}")
-                        continue
-                    elif failed_code == 2:
-                        # Ключ истек, получаем новый
-                        logger.info("🔄 Ключ истек, получаем новый...")
-                        longpoll_data = await self.client.get_longpoll_server()
-                        key = longpoll_data.get("key")
-                        server = longpoll_data.get("server")
-                        ts = longpoll_data.get("ts")
-                        continue
-                    elif failed_code == 3:
-                        # Информация потеряна, получаем новую
-                        logger.info("🔄 Информация потеряна, получаем новую...")
-                        longpoll_data = await self.client.get_longpoll_server()
-                        key = longpoll_data.get("key")
-                        server = longpoll_data.get("server")
-                        ts = longpoll_data.get("ts")
-                        continue
+                logger.info(f"👤 От пользователя: {user_id}")
+                logger.info(
+                    f"📝 Текст: {message_text[:50] if message_text else '[пусто]'}"
+                )
+                if payload:
+                    logger.debug(f"📦 Payload: {payload}")
+
+                # Если текст пустой, но есть вложения
+                if not message_text and not payload:
+                    attachments = message.get("attachments", [])
+                    if attachments:
+                        logger.info(
+                            f"💬 Сообщение от {user_id} содержит вложения (без текста)"
+                        )
+                        # Можно обработать как специальную команду
+                        message_text = "/attachment"
                     else:
-                        logger.error(f"❌ Неизвестная ошибка LongPoll: {failed_code}")
-                        await asyncio.sleep(1)
-                        continue
+                        logger.info(f"💬 Пустое сообщение от {user_id}, игнорируем")
+                        return
 
-                # Обновляем ts
-                ts = data.get("ts", ts)
+                # Обрабатываем сообщение
+                logger.debug("🔄 Начинаем обработку сообщения...")
+                await self.message_handler.handle_message(
+                    user_id=user_id,
+                    message_text=message_text,
+                    payload=payload,  # payload передается как строка JSON или None
+                )
+                logger.debug("✅ Обработка сообщения завершена")
 
-                # Обрабатываем обновления
-                updates = data.get("updates", [])
-                if updates:
-                    print(f"📨 === ПОЛУЧЕНО {len(updates)} ОБНОВЛЕНИЙ ===")
-                    sys.stdout.flush()
+            # Обработка событий от inline кнопок
+            elif event_type == "message_event":
+                logger.info("🔘 Обработка события от inline кнопки...")
+                obj = update.get("object")
+                if not obj:
+                    logger.warning("⚠️ Объект события пуст")
+                    return
 
-                    for update in updates:
-                        print(f"📨 === ОБНОВЛЕНИЕ: {update} ===")
-                        sys.stdout.flush()
-                        cmd = await self.handler._handle_update(update)
-                        await cmd.execute()  # type: ignore
+                # Для message_event своя структура
+                user_id = obj.get("user_id")
+                payload = obj.get("payload")
+                event_id = obj.get("event_id")
 
-                # Небольшая пауза, чтобы не нагружать сервер
-                await asyncio.sleep(0.1)
+                if user_id is None:
+                    logger.warning("⚠️ Событие без user_id")
+                    return
 
-            except asyncio.CancelledError:
-                logger.info("Опрос LongPoll остановлен")
-                break
-            except Exception as e:
-                logger.error(f"❌ Ошибка в цикле LongPoll: {e}", exc_info=True)
-                await asyncio.sleep(1)
+                logger.info(f"👤 От пользователя: {user_id}")
+                logger.info(f"📦 Payload: {payload}")
+
+                # Обрабатываем как сообщение с payload
+                await self.message_handler.handle_message(
+                    user_id=user_id,
+                    message_text="",  # Нет текста
+                    payload=json.dumps(payload)
+                    if isinstance(payload, dict)
+                    else payload,
+                )
+
+                # Подтверждаем получение события (важно для VK)
+                logger.debug("🔄 Отправка подтверждения события...")
+                await self.vk_client.answer_message_event(
+                    event_id=event_id, user_id=user_id, peer_id=obj.get("peer_id")
+                )
+                logger.debug("✅ Подтверждение события отправлено")
+            else:
+                logger.debug(f"ℹ️ Игнорируем событие типа: {event_type}")
+
+        except Exception as e:
+            logger.error(f"❌ Ошибка при обработке обновления: {e}", exc_info=True)
+
+    async def stop(self):
+        """Остановка бота"""
+        logger.info("🛑 Остановка бота...")
+        self.is_running = False
+
+        await self.vk_client.close()
+        logger.info("✅ Бот остановлен")

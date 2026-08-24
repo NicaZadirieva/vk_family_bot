@@ -14,7 +14,7 @@ from app.exceptions.database_error import DatabaseError
 logger = logging.getLogger(__name__)
 
 
-class BaseRepo:
+class BaseDbRepo:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 

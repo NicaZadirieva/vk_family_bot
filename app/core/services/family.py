@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 class FamilyService:
     """Работа над сущностью Семья"""
 
-    def __init__(self, repo: FamilyRepo):
-        self._repo = repo
+    def __init__(self, repository: FamilyRepo):
+        self._repo = repository
 
     async def get_family_by_link(self, link: str):
         family = await self._repo.get_family_by_link(link)

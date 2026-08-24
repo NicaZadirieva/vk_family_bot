@@ -5,13 +5,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db.models.family import Family
-from app.core.repositories.base import BaseRepo
+from app.core.repositories.base_db import BaseDbRepo
 from app.exceptions.database_error import DatabaseError
 
 logger = logging.getLogger(__name__)
 
 
-class FamilyRepo(BaseRepo):
+class FamilyRepo(BaseDbRepo):
     """Работа над сущностью Семья"""
 
     def __init__(self, db_session: AsyncSession):
