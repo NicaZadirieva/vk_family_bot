@@ -20,6 +20,7 @@ class KeyboardFactory:
         keyboards = {
             "add": KeyboardFactory._add_children_or_parent,
             "main": KeyboardFactory._main,
+            "profile_kb": KeyboardFactory._profile_kb,
         }
 
         # Возвращаем клавиатуру или None (без клавиатуры)
@@ -28,6 +29,31 @@ class KeyboardFactory:
 
         # По умолчанию - только "Назад"
         return KeyboardFactory._back_only()
+
+    @staticmethod
+    def _profile_kb():
+        return {
+            "one_time": False,
+            "buttons": [
+                [
+                    KeyboardFactory._btn(
+                        "Создание семьи", "create_family", "secondary"
+                    ),
+                    KeyboardFactory._btn("Присоединиться к семье", "join", "secondary"),
+                ],
+                [
+                    KeyboardFactory._btn("Добавить ребенка", "add_child", "secondary"),
+                    KeyboardFactory._btn(
+                        "Добавить родителя", "add_parent", "secondary"
+                    ),
+                ],
+                [
+                    KeyboardFactory._btn(
+                        "Выбрать ребенка", "choose_child", "secondary"
+                    ),
+                ],
+            ],
+        }
 
     @staticmethod
     def _main():
@@ -41,7 +67,7 @@ class KeyboardFactory:
                 ],
                 [
                     KeyboardFactory._btn("📋 Все задачи", "task", "secondary"),
-                    KeyboardFactory._btn("👨‍👩‍👧‍👦 Семья", "profile", "secondary"),
+                    KeyboardFactory._btn("👨‍👩‍👧‍👦 Семья", "profile_kb", "secondary"),
                 ],
                 [
                     KeyboardFactory._btn("⭐ Награды", "reward", "secondary"),
