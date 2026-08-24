@@ -56,16 +56,10 @@ class MessageHandler:
         self, user_id: int, message_text: str, payload: str | None = None
     ):
         try:
-            logger.info(
-                f"📩 Получено сообщение от {user_id}: '{message_text}' (payload: {payload})"
-            )
-            logger.info(f"🔍 Тип message_text: {type(message_text)}")
-            logger.info(f"🔍 repr(message_text): {repr(message_text)}")
-
             state = await self.user_state_service.get_or_create_user_state(
                 user_id, default_state=UserState(user_id)
             )
-            logger.info(f"🔍 Текущий screen пользователя: {state.current_screen}")
+            logger.debug(f"🔍 Текущий screen пользователя: {state.current_screen}")
             response, screen_type = await self._process_message(
                 user_id, message_text, payload, state
             )
@@ -81,20 +75,6 @@ class MessageHandler:
         # Удаляем невидимые символы
         clean_text = message_text.strip() if message_text else ""
 
-        logger.info(f"🔍 _process_message вызван")
-        logger.info(f"🔍 clean_text: '{clean_text}'")
-        logger.info(f"🔍 clean_text type: {type(clean_text)}")
-        logger.info(f"🔍 clean_text length: {len(clean_text)}")
-        logger.info(f"🔍 clean_text repr: {repr(clean_text)}")
-        logger.info(f"🔍 commands keys: {list(self.commands.keys())}")
-        logger.info(f"🔍 Проверка 'start' in commands: {'start' in self.commands}")
-        logger.info(
-            f"🔍 Проверка clean_text in commands: {clean_text in self.commands}"
-        )
-        logger.info(
-            f"🔍 Проверка clean_text.lower() in commands: {clean_text.lower() in self.commands}"
-        )
-
         # 1. Обработка payload (приоритет 1)
         if payload:
             result = await self._handle_payload(user_id, payload, state)
@@ -103,8 +83,6 @@ class MessageHandler:
 
         # 3. Обработка текстовых команд (приоритет 2)
         command_key = clean_text.lower()
-        logger.info(f"🔍 command_key: '{command_key}'")
-        logger.info(f"🔍 command_key in commands: {command_key in self.commands}")
         if command_key in self.commands:
             logger.info(f"✅ Выполняем команду: {command_key}")
             return await self.commands[command_key].execute(user_id, state)
@@ -114,12 +92,7 @@ class MessageHandler:
 
         state_handler = get_state(state.current_screen, self.services)
         if state_handler:
-            logger.info(f"🔍 Найден state_handler: {state_handler}")
             return await state_handler.handle(user_id, clean_text, state)
-        else:
-            logger.info(
-                f"🔍 state_handler не найден для screen: {state.current_screen}"
-            )
 
         # 4. Обработка команд с / (приоритет 4)
         if clean_text.startswith("/"):
