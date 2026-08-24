@@ -40,6 +40,9 @@ class MessageHandler:
         for cmd in commands:
             logger.info(f"🔹 Регистрация команды: {cmd.name}")
             self.commands[cmd.name] = cmd
+            if hasattr(cmd, "aliases"):
+                for alias in cmd.aliases:
+                    self.commands[alias] = cmd
 
         logger.info(f"✅ Команды зарегистрированы: {list(self.commands.keys())}")
 

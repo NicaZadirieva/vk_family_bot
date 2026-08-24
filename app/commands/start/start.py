@@ -12,6 +12,10 @@ class StartCommand(ICommand):
     def name(self) -> str:
         return "start"
 
+    @property
+    def aliases(self) -> list[str]:
+        return ["старт", "начать"]
+
     async def execute(
         self, user_id: int, state: UserState, payload: dict | None = None
     ) -> tuple[str, str]:
