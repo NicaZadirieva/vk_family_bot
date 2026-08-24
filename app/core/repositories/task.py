@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-class TasksRepo:
+class TaskRepo:
     """Работа над сущностью Задача"""
 
     def __init__(self, db_session: AsyncSession):

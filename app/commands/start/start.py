@@ -1,0 +1,25 @@
+import logging
+
+from app.commands.base import ICommand
+from app.core.repositories.base_user_state_repo import UserState
+from app.states.main_state import MainState
+
+logger = logging.getLogger(__name__)
+
+
+class StartCommand(ICommand):
+    @property
+    def name(self) -> str:
+        return "start"
+
+    @property
+    def aliases(self) -> list[str]:
+        return ["старт", "начать"]
+
+    async def execute(
+        self, user_id: int, state: UserState, payload: dict | None = None
+    ) -> tuple[str, str]:
+        logger.debug(f"🚀 Выполняется StartCommand для user {user_id}")
+        main_state = MainState()
+        state.current_screen = main_state.name
+        return await main_state.enter(user_id, state)

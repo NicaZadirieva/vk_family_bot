@@ -9,7 +9,7 @@ from app.core.db.models.role import Role
 
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     vk_id: Mapped[str] = mapped_column(String(100), nullable=True)
@@ -28,9 +28,5 @@ class User(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
-    invited_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
+    invited_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("user.id"))
     password_hash: Mapped[str] = mapped_column(String(128), nullable=False)
-
-    # Связи
-    invited_by = relationship("User", remote_side=[id])
-    invites_created = relationship("Invite", back_populates="creator")

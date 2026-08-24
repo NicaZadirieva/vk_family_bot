@@ -166,25 +166,58 @@ class VKClient:
         try:
             session = await self._ensure_session()
 
-            url = f"{server}?act=a_check&key={key}&ts={ts}&wait={wait}"
-            logger.debug(f"🔄 LongPoll запрос к {url[:100]}...")
+            # Пробуем разные режимы: mode=2 для сообщений, mode=234 для всех событий
+            url = f"{server}?act=a_check&key={key}&ts={ts}&wait={wait}&mode=234"
+            logger.info(f"🔄 LongPoll запрос")
+            logger.debug(f"URL: {url.replace(key, 'HIDDEN')}")
 
-            async with session.get(url) as resp:
+            async with session.get(url, timeout=30) as resp:
+                logger.info(f"📊 LongPoll статус: {resp.status}")
+
                 if resp.status != 200:
-                    logger.error(f"❌ LongPoll ошибка: статус {resp.status}")
+                    error_text = await resp.text()
+                    logger.error(
+                        f"❌ LongPoll ошибка: статус {resp.status}, текст: {error_text}"
+                    )
                     return {"failed": 2}
 
                 data = await resp.json()
 
-                # Проверяем наличие обновлений
+                # Логируем ВЕСЬ ответ полностью
+                logger.info(
+                    f"📦 LongPoll ОТВЕТ (полный): {json.dumps(data, ensure_ascii=False, default=str)}"
+                )
+
+                # Проверяем наличие ключей
+                logger.info(f"🔑 Ключи в ответе: {list(data.keys())}")
+
+                # Проверяем ts
+                new_ts = data.get("ts")
+                if new_ts:
+                    logger.info(f"🕐 Новый ts: {new_ts} (старый: {ts})")
+
+                # Проверяем failed
+                if "failed" in data:
+                    logger.warning(f"⚠️ LongPoll failed: {data['failed']}")
+                    return data
+
+                # Проверяем updates
                 updates = data.get("updates", [])
-                logger.debug(f"✅ LongPoll получен ответ: {len(updates)} обновлений")
+                logger.info(f"📨 Количество обновлений: {len(updates)}")
 
                 if len(updates) > 0:
-                    logger.info(f"📨 Получено {len(updates)} обновлений от LongPoll")
-                    # Логируем типы обновлений для отладки
-                    update_types = [u.get("type") for u in updates]
-                    logger.debug(f"Типы обновлений: {update_types}")
+                    logger.info(
+                        f"📨 ТИПЫ обновлений: {[u.get('type') for u in updates]}"
+                    )
+                    # Логируем первое обновление полностью
+                    logger.info(
+                        f"📨 Первое обновление: {json.dumps(updates[0], ensure_ascii=False, default=str)}"
+                    )
+                else:
+                    # Если нет обновлений, проверяем, может быть они в другом поле
+                    for key in data.keys():
+                        if key not in ["ts", "failed", "updates"]:
+                            logger.info(f"🔍 Дополнительное поле '{key}': {data[key]}")
 
                 return data
 
@@ -197,6 +230,22 @@ class VKClient:
         except Exception as e:
             logger.error(f"❌ LongPoll неизвестная ошибка: {e}", exc_info=True)
             return {"failed": 2}
+
+    async def check_longpoll_settings(self) -> Dict[str, Any]:
+        """Проверка настроек LongPoll для группы"""
+        try:
+            logger.info("🔄 Проверка настроек LongPoll...")
+            result = await self._request(
+                "groups.getLongPollSettings",
+                {"group_id": settings.vk_app.VK_GROUP_ID},
+            )
+            logger.info(
+                f"✅ Настройки LongPoll: {json.dumps(result, ensure_ascii=False, default=str)}"
+            )
+            return result
+        except Exception as e:
+            logger.error(f"❌ Ошибка получения настроек LongPoll: {e}")
+            raise
 
     async def answer_message_event(self, event_id: str, user_id: int, peer_id: int):
         """Ответ на событие от inline кнопки (обязательно для VK)"""

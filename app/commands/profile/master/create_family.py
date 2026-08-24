@@ -1,7 +1,9 @@
+import logging
+
 from app.commands.base import ICommand
+
+logger = logging.getLogger(__name__)
 
 
 class CreateFamilyCmd(ICommand):
-    """Первый родитель
-    начинает диалог с сообществом (кнопка “Начать”) →
-    получает приветственное сообщение с предложением создать семью."""
+    pass

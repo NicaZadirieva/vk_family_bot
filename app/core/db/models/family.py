@@ -12,3 +12,4 @@ class Family(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    link: Mapped[str] = mapped_column(String(50), nullable=False)

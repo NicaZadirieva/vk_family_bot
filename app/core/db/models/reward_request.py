@@ -10,7 +10,7 @@ class RewardRequest(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     child_profile_id = Column(
-        Integer, ForeignKey("child_profiles.id"), nullable=False, index=True
+        Integer, ForeignKey("child_profile.id"), nullable=False, index=True
     )
     reward_id = Column(Integer, ForeignKey("rewards.id"), nullable=False, index=True)
     status = Column(Enum(RequestStatus), nullable=False, default=RequestStatus.PENDING)
