@@ -18,8 +18,8 @@ class KeyboardFactory:
         """
         # Карта соответствия screen_type -> функция создания
         keyboards = {
-            "start": KeyboardFactory._start,
             "add": KeyboardFactory._add_children_or_parent,
+            "main": KeyboardFactory._main,
         }
 
         # Возвращаем клавиатуру или None (без клавиатуры)
@@ -28,6 +28,27 @@ class KeyboardFactory:
 
         # По умолчанию - только "Назад"
         return KeyboardFactory._back_only()
+
+    @staticmethod
+    def _main():
+        return {
+            "one_time": False,
+            "buttons": [
+                [
+                    KeyboardFactory._btn(
+                        "📅 Сводка на сегодня", "calendar", "secondary"
+                    ),
+                ],
+                [
+                    KeyboardFactory._btn("📋 Все задачи", "task", "secondary"),
+                    KeyboardFactory._btn("👨‍👩‍👧‍👦 Семья", "profile", "secondary"),
+                ],
+                [
+                    KeyboardFactory._btn("⭐ Награды", "reward", "secondary"),
+                    KeyboardFactory._btn("📝 Заметки", "note", "secondary"),
+                ],
+            ],
+        }
 
     @staticmethod
     def _add_children_or_parent():
@@ -44,10 +65,6 @@ class KeyboardFactory:
                 ]
             ],
         }
-
-    @staticmethod
-    def _start():
-        return KeyboardFactory._btn("Начать", "start")
 
     @staticmethod
     def _btn(label: str, action: str, color: str = "secondary") -> Dict[str, Any]:
