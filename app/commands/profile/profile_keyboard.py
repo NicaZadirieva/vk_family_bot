@@ -1,20 +1,11 @@
 from app.commands.base import ICommand
 from app.core.repositories.base_user_state_repo import UserState
-from app.shared.message_templates import MessageTemplates
 
 
-class HelpCmd(ICommand):
-    """
-    Помощь
-    """
-
+class ProfileKeyboardCommand(ICommand):
     @property
     def name(self) -> str:
-        return "help"
-
-    @property
-    def aliases(self) -> list[str]:
-        return ["помощь", "помоги", "?"]
+        return "profile_kb"
 
     async def execute(
         self,
@@ -23,6 +14,7 @@ class HelpCmd(ICommand):
         params: str | None = None,
         payload: dict | None = None,
     ) -> tuple[str, str]:
-        state.current_screen = "main"
+        state.current_screen = "profile_kb"
         state.data = {}
-        return MessageTemplates.HELP, "main"
+        # TODO: выделить текстовку
+        return "Выберите одно из действий на клавиатуре", "profile_kb"

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db.models.base import Base
 from app.core.db.models.permission import Permission
@@ -12,7 +12,8 @@ class User(Base):
     __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    vk_id: Mapped[str] = mapped_column(String(100), nullable=True)
+    # TODO: перегенерировать эту таблицу из-за unique и nullable=False
+    vk_id: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     family_id: Mapped[int] = mapped_column(ForeignKey("family.id"), nullable=True)
     child_profile_id: Mapped[int] = mapped_column(
         ForeignKey("child_profile.id"), nullable=True

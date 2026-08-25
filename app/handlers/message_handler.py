@@ -3,6 +3,8 @@ import logging
 from typing import Any
 
 from app.commands.help import HelpCmd
+from app.commands.profile.parent.add_child import AddChildCmd
+from app.commands.profile.profile_keyboard import ProfileKeyboardCommand
 from app.commands.start.start import StartCommand
 from app.core.di.services_container import ServicesContainer
 from app.core.repositories.base_user_state_repo import UserState
@@ -27,7 +29,12 @@ class MessageHandler:
     def _register_commands(self):
         logger.info("📝 Регистрация команд...")
 
-        commands = [StartCommand(), HelpCmd()]
+        commands = [
+            StartCommand(),
+            HelpCmd(),
+            ProfileKeyboardCommand(),
+            AddChildCmd(self.services),
+        ]
 
         for cmd in commands:
             self.commands[cmd.name] = cmd
@@ -38,6 +45,8 @@ class MessageHandler:
     def _register_payload_handlers(self):
         payload_map = {
             "start": "start",
+            "profile_kb": "profile_kb",
+            "add_child": "add_child",
         }
 
         for payload_action, command_name in payload_map.items():
@@ -88,10 +97,14 @@ class MessageHandler:
 
         # 4. Обработка команд с / (приоритет 4)
         if clean_text.startswith("/"):
-            command_name = clean_text[1:].lower()
+            # Разделяем текст на команду и параметры
+            parts = clean_text[1:].split(maxsplit=1)
+            command_name = parts[0].lower()
+            params = parts[1] if len(parts) > 1 else ""
+
             logger.info(f"🔍 command_name: '{command_name}'")
             if command_name in self.commands:
-                return await self.commands[command_name].execute(user_id, state)
+                return await self.commands[command_name].execute(user_id, state, params)
         logger.warning(
             f"❌ Команда не найдена. clean_text: '{clean_text}', command_key: '{command_key}'"
         )
@@ -115,7 +128,7 @@ class MessageHandler:
             if action in self.payload_handlers:
                 command = self.payload_handlers[action]
                 state.data.update(self.__clear_payload_data__(payload_data))
-                return await command.execute(user_id, state, payload_data)
+                return await command.execute(user_id, state, payload=payload_data)
 
         except (json.JSONDecodeError, AttributeError) as e:
             logger.warning(f"Ошибка парсинга payload: {e}")

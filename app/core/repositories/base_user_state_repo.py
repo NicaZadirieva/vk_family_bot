@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 UserId = int
 """
-Id пользователя в кэше
+Id пользователя в кэше или VkID
 """
 
 
