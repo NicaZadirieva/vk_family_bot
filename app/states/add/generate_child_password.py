@@ -28,8 +28,9 @@ class GenerateChildPasswordState(IState):
     ) -> tuple[str, str]:
         vk_name = state.data.get("vk_name")
         profile_name = state.data.get("profile_name")
+        chat_link = state.data.get("chat_link")
 
-        if vk_name and profile_name:
+        if vk_name and profile_name and chat_link:
             # Генерация 6-значного пароля (цифры + буквы)
             password = self._generate_password()
 
@@ -39,11 +40,13 @@ class GenerateChildPasswordState(IState):
             # TODO: вызов сервиса InviteService с сохранением кода
 
             # Формируем сообщение с паролем (инвайт-кодом)
-            message = MessageTemplates.INVITE_CODE.format(code=password)
+            message = MessageTemplates.INVITE_CODE.format(
+                code=password, chat_link=chat_link
+            )
 
             return message, self.name
         else:
-            return MessageTemplates.GENERATE_INVITE_CODE_NO_NAMES, self.name
+            return MessageTemplates.GENERATE_INVITE_CODE_NO_DATA, self.name
 
     def _generate_password(self) -> str:
         """

@@ -26,13 +26,11 @@ class AddChildUserProfileState(IState):
         if name:
             state.data["profile_name"] = name
             await self.user_state_service.update_user_state(user_id, state)
-            from app.states.add.generate_child_password import (
-                GenerateChildPasswordState,
+            from app.states.add.add_child_chat_link import (
+                AddChildChatLinkState,
             )
 
-            generate_child_password_state = GenerateChildPasswordState(
-                services=self.services
-            )
-            return await generate_child_password_state.enter(user_id, state)
+            add_child_chat_link_state = AddChildChatLinkState(services=self.services)
+            return await add_child_chat_link_state.enter(user_id, state)
         else:
             return MessageTemplates.CHILD_PROFILE_NAME_EMPTY, self.name

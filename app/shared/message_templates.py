@@ -74,13 +74,15 @@ class MessageTemplates:
 
     CHILD_VK_NAME_INVALID = "❌ Напишите VK_ID"
 
+    CHILD_VK_CHAT_ID_INVALID = "❌ Напишите CHAT_ID"
+
     ASK_CHILD_PROFILE_NAME = "Пожалуйста, напишите имя ребенка внутри бота"
 
     CHILD_PROFILE_NAME_EMPTY = "❌ Введите имя ребенка внутри бота"
 
-    GENERATE_INVITE_CODE_NO_NAMES = (
-        "Произошла ошибка при вычислении имен. Пожалуйста, повторите команду добавления"
-    )
+    ASK_CHAT_ID = "Пожалуйста, введите chat Id. Например в https://vk.ru/im/convo/1234567, chat Id = 1234567"
+
+    GENERATE_INVITE_CODE_NO_DATA = "Произошла ошибка. Недостотачно данных. Пожалуйста, повторите команду добавления"
 
     FAMILY_CREATED = (
         "🎉 Семья создана!\n\n"
@@ -91,7 +93,7 @@ class MessageTemplates:
 
     INVITE_CODE = (
         "✅ Приглашение создано!\n\n"
-        "Код приглашения: {code}\n\n"
+        "Код приглашения для чата {chat_link}: {code}\n\n"
         "Передайте этот код приглашённому пользователю.\n"
         "Он должен написать боту: /join {code}"
     )
