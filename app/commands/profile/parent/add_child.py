@@ -65,8 +65,6 @@ class AddChildCmd(ICommand):
         params: str | None = None,
         payload: dict | None = None,
     ) -> tuple[str, str]:
-
-        # Парсим параметры
         generate_child_password_state = GenerateChildPasswordState(self.services)
         if params:
             vk_identifier, profile_name = self._parse_params(params or "")
