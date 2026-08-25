@@ -85,6 +85,4 @@ class AddChildCmd(ICommand):
             state.data["vk_name"] = vk_identifier
             state.data["profile_name"] = profile_name
             await self.user_state_service.update_user_state(user_id, new_state=state)
-            return await generate_child_password_state.enter(user_id, state, payload)
-        else:
-            return await generate_child_password_state.enter(user_id, state, payload)
+        return await generate_child_password_state.enter(user_id, state, payload)
