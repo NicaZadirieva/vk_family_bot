@@ -6,4 +6,3 @@ class Permission(Enum):
     ADMIN = "admin"  # Может добавлять пользователей
     USER = "user"  # Обычный пользователь
     FAMILY = "family"  # Член семьи (может видеть чат семьи)
-    NO_JOIN = "no_join"  # Не присоединившийся

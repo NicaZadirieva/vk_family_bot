@@ -17,7 +17,11 @@ class StartCommand(ICommand):
         return ["старт", "начать"]
 
     async def execute(
-        self, user_id: int, state: UserState, payload: dict | None = None
+        self,
+        user_id: int,
+        state: UserState,
+        params: str | None = None,
+        payload: dict | None = None,
     ) -> tuple[str, str]:
         logger.debug(f"🚀 Выполняется StartCommand для user {user_id}")
         main_state = MainState()

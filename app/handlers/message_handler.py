@@ -87,10 +87,14 @@ class MessageHandler:
 
         # 4. Обработка команд с / (приоритет 4)
         if clean_text.startswith("/"):
-            command_name = clean_text[1:].lower()
+            # Разделяем текст на команду и параметры
+            parts = clean_text[1:].split(maxsplit=1)
+            command_name = parts[0].lower()
+            params = parts[1] if len(parts) > 1 else ""
+
             logger.info(f"🔍 command_name: '{command_name}'")
             if command_name in self.commands:
-                return await self.commands[command_name].execute(user_id, state)
+                return await self.commands[command_name].execute(user_id, state, params)
         logger.warning(
             f"❌ Команда не найдена. clean_text: '{clean_text}', command_key: '{command_key}'"
         )
@@ -114,7 +118,7 @@ class MessageHandler:
             if action in self.payload_handlers:
                 command = self.payload_handlers[action]
                 state.data.update(self.__clear_payload_data__(payload_data))
-                return await command.execute(user_id, state, payload_data)
+                return await command.execute(user_id, state, payload=payload_data)
 
         except (json.JSONDecodeError, AttributeError) as e:
             logger.warning(f"Ошибка парсинга payload: {e}")

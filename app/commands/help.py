@@ -17,7 +17,11 @@ class HelpCmd(ICommand):
         return ["помощь", "помоги", "?"]
 
     async def execute(
-        self, user_id: int, state: UserState, payload: dict | None = None
+        self,
+        user_id: int,
+        state: UserState,
+        params: str | None = None,
+        payload: dict | None = None,
     ) -> tuple[str, str]:
         state.current_screen = "main"
         state.data = {}

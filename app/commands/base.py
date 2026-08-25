@@ -8,7 +8,11 @@ class ICommand(ABC):
 
     @abstractmethod
     async def execute(
-        self, user_id: int, state: UserState, payload: dict | None = None
+        self,
+        user_id: int,
+        state: UserState,
+        params: str | None = None,
+        payload: dict | None = None,
     ) -> tuple[str, str]:
         """Выполняет команду и возвращает (текст_ответа, экран)."""
 
