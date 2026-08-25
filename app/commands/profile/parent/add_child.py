@@ -3,6 +3,7 @@ import re
 from app.commands.base import ICommand
 from app.core.di.services_container import ServicesContainer
 from app.core.repositories.base_user_state_repo import UserState
+from app.utils.vk_utils import VkUtils
 
 
 class AddChildCmd(ICommand):
@@ -68,17 +69,21 @@ class AddChildCmd(ICommand):
         if params:
             vk_identifier, profile_name = self._parse_params(params or "")
 
-            if not vk_identifier or not profile_name:
+            if (
+                vk_identifier
+                and not VkUtils.is_valid_vk_id(vk_identifier)
+                or not vk_identifier
+                or not profile_name
+            ):
                 # TODO: подумать надо ли добавлять в MessageTemplates
                 return (
                     "❌ Неверный формат команды!\n"
-                    "Используйте: /add_child @ИмяВК [Имя_профиля]\n"
+                    "Используйте: /add_child @VkId [Имя_профиля]\n"
                     "Например: /add_child @ivanov [Петр Иванов]"
                 ), self.name
             # TODO:
             # 1. Проверить, что VK ID не состоит в другой семье
-            # 2. Проверить, что пользователь с таким VK ID существует в VK
-            # 3. Если все ок, сгенерировать 6-значный код
+            # 2. Если все ок, сгенерировать 6-значный код
             from app.states.add.generate_child_password import (
                 GenerateChildPasswordState,
             )

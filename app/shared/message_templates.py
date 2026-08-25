@@ -70,9 +70,9 @@ class MessageTemplates:
     # УПРАВЛЕНИЕ СЕМЬЁЙ И ПРИГЛАШЕНИЯ
     # -------------------------
 
-    ASK_CHILD_VK_NAME = "Пожалуйста, напишите имя профиля в VK"
+    ASK_CHILD_VK_NAME = "Пожалуйста, напишите VK_ID"
 
-    CHILD_VK_NAME_EMPTY = "❌ Введите имя профиля в VK"
+    CHILD_VK_NAME_INVALID = "❌ Напишите VK_ID"
 
     ASK_CHILD_PROFILE_NAME = "Пожалуйста, напишите имя ребенка внутри бота"
 
