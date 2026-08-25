@@ -1,8 +1,9 @@
 from app.core.di.services_container import ServicesContainer
-from app.states.add.add_child_chat_link import AddChildChatLinkState
+from app.states.family.create.add_chat_link import AddFamilyChatLinkState
 from app.states.add.add_child_user_profile import AddChildUserProfileState
 from app.states.add.add_child_vk_name import AddChildVkNameState
 from app.states.add.generate_child_password import GenerateChildPasswordState
+from app.states.family.create.add_name import AddFamilyNameState
 from .base import IState
 from .main_state import MainState
 
@@ -13,7 +14,8 @@ _state_registry = {
     "generate_child_password": GenerateChildPasswordState,
     "add_child_user_profile": AddChildUserProfileState,
     "add_child_vk_name": AddChildVkNameState,
-    "add_child_chat_link": AddChildChatLinkState,
+    "add_family_chat_link": AddFamilyChatLinkState,
+    "add_family_name": AddFamilyNameState,
 }
 
 

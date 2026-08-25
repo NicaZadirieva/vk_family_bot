@@ -5,10 +5,10 @@ from app.states.base import IState
 from app.utils.vk_utils import VkUtils
 
 
-class AddChildChatLinkState(IState):
+class AddFamilyChatLinkState(IState):
     @property
     def name(self):
-        return "add_child_chat_link"
+        return "add_family_chat_link"
 
     def __init__(self, services: ServicesContainer):
         self.services = services
@@ -33,12 +33,7 @@ class AddChildChatLinkState(IState):
         # TODO: добавить ссылку в .env
         state.data["chat_link"] = f"https://vk.ru/im/convo/{chat_id}"
         await self.user_state_service.update_user_state(user_id, state)
+        from app.states.family.create.add_name import AddFamilyNameState
 
-        from app.states.add.generate_child_password import (
-            GenerateChildPasswordState,
-        )
-
-        generate_child_password_state = GenerateChildPasswordState(
-            services=self.services
-        )
-        return await generate_child_password_state.enter(user_id, state)
+        add_family_name_state = AddFamilyNameState(self.services)
+        return await add_family_name_state.enter(user_id, state)

@@ -84,13 +84,17 @@ class AddChildCmd(ICommand):
             # TODO:
             # 1. Проверить, что VK ID не состоит в другой семье
             # 2. Если все ок, сгенерировать 6-значный код
-            from app.states.add.add_child_chat_link import AddChildChatLinkState
+            from app.states.add.generate_child_password import (
+                GenerateChildPasswordState,
+            )
 
-            add_child_chat_link_state = AddChildChatLinkState(services=self.services)
+            generate_child_password_state = GenerateChildPasswordState(
+                services=self.services
+            )
             state.data["vk_name"] = vk_identifier
             state.data["profile_name"] = profile_name
             await self.user_state_service.update_user_state(user_id, new_state=state)
-            return await add_child_chat_link_state.enter(user_id, state, payload)
+            return await generate_child_password_state.enter(user_id, state, payload)
         else:
             from app.states.add.add_child_vk_name import AddChildVkNameState
 

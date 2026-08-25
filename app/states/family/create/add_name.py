@@ -4,35 +4,29 @@ from app.shared.message_templates import MessageTemplates
 from app.states.base import IState
 
 
-class AddChildUserProfileState(IState):
+class AddFamilyNameState(IState):
+    @property
+    def name(self):
+        return "add_family_name"
+
     def __init__(self, services: ServicesContainer):
         self.services = services
         self.user_state_service = self.services.user_state_service()
-
-    @property
-    def name(self) -> str:
-        return "add_child_user_profile"
 
     async def enter(
         self, user_id: int, state: UserState, payload: dict | None = None
     ) -> tuple[str, str]:
         state.current_screen = self.name
-        return MessageTemplates.ASK_CHILD_PROFILE_NAME, self.name
+        return "Введите название для Вашей семьи", self.name
 
     async def handle(
         self, user_id: int, text: str, state: UserState
     ) -> tuple[str, str]:
-        name = text.strip()
-        if name:
-            state.data["profile_name"] = name
+        family_name = text.strip()
+        if family_name:
+            state.data["family_name"] = family_name
             await self.user_state_service.update_user_state(user_id, state)
-            from app.states.add.generate_child_password import (
-                GenerateChildPasswordState,
-            )
-
-            generate_child_password_state = GenerateChildPasswordState(
-                services=self.services
-            )
-            return await generate_child_password_state.enter(user_id, state)
+            # TODO: сохранить семью
+            return MessageTemplates.FAMILY_CREATED, "main"
         else:
-            return MessageTemplates.CHILD_PROFILE_NAME_EMPTY, self.name
+            return "❌ Введите название для Вашей семьи", self.name

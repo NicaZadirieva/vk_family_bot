@@ -3,6 +3,7 @@ import logging
 from typing import Any
 
 from app.commands.help import HelpCmd
+from app.commands.profile.master.create_family import CreateFamilyCmd
 from app.commands.profile.parent.add_child import AddChildCmd
 from app.commands.profile.profile_keyboard import ProfileKeyboardCommand
 from app.commands.start.start import StartCommand
@@ -34,6 +35,7 @@ class MessageHandler:
             HelpCmd(),
             ProfileKeyboardCommand(),
             AddChildCmd(self.services),
+            CreateFamilyCmd(self.services),
         ]
 
         for cmd in commands:
@@ -47,6 +49,7 @@ class MessageHandler:
             "start": "start",
             "profile_kb": "profile_kb",
             "add_child": "add_child",
+            "create_family": "create_family",
         }
 
         for payload_action, command_name in payload_map.items():
