@@ -26,7 +26,13 @@ class AddChildUserProfileState(IState):
         if name:
             state.data["profile_name"] = name
             await self.user_state_service.update_user_state(user_id, state)
-            # TODO: добавить переход на генерацию пароля
-            return "", ""
+            from app.states.add.generate_child_password import (
+                GenerateChildPasswordState,
+            )
+
+            generate_child_password_state = GenerateChildPasswordState(
+                services=self.services
+            )
+            return await generate_child_password_state.enter(user_id, state)
         else:
             return MessageTemplates.CHILD_PROFILE_NAME_EMPTY, self.name

@@ -19,7 +19,7 @@ class GenerateChildPasswordState(IState):
     ) -> tuple[str, str]:
         state.current_screen = self.name
         return (
-            f"Создаю пароль для пользователя {state.data.get('vk_name', '')}",
+            f"Чтобы создать пароль для пользователя {state.data.get('vk_name', '')}, напишите любое слово",
             self.name,
         )
 

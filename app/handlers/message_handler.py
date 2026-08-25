@@ -3,6 +3,7 @@ import logging
 from typing import Any
 
 from app.commands.help import HelpCmd
+from app.commands.profile.parent.add_child import AddChildCmd
 from app.commands.profile.profile_keyboard import ProfileKeyboardCommand
 from app.commands.start.start import StartCommand
 from app.core.di.services_container import ServicesContainer
@@ -28,7 +29,12 @@ class MessageHandler:
     def _register_commands(self):
         logger.info("📝 Регистрация команд...")
 
-        commands = [StartCommand(), HelpCmd(), ProfileKeyboardCommand()]
+        commands = [
+            StartCommand(),
+            HelpCmd(),
+            ProfileKeyboardCommand(),
+            AddChildCmd(self.services),
+        ]
 
         for cmd in commands:
             self.commands[cmd.name] = cmd
@@ -37,7 +43,11 @@ class MessageHandler:
                     self.commands[alias] = cmd
 
     def _register_payload_handlers(self):
-        payload_map = {"start": "start", "profile_kb": "profile_kb"}
+        payload_map = {
+            "start": "start",
+            "profile_kb": "profile_kb",
+            "add_child": "add_child",
+        }
 
         for payload_action, command_name in payload_map.items():
             if command_name in self.commands:

@@ -18,7 +18,6 @@ class KeyboardFactory:
         """
         # Карта соответствия screen_type -> функция создания
         keyboards = {
-            "add": KeyboardFactory._add_children_or_parent,
             "main": KeyboardFactory._main,
             "profile_kb": KeyboardFactory._profile_kb,
         }
@@ -77,14 +76,12 @@ class KeyboardFactory:
         }
 
     @staticmethod
-    def _add_children_or_parent():
+    def _add_child_or_parent():
         return {
             "one_time": False,
             "buttons": [
                 [
-                    KeyboardFactory._btn(
-                        "Добавить ребенка", "add_children", "secondary"
-                    ),
+                    KeyboardFactory._btn("Добавить ребенка", "add_child", "secondary"),
                     KeyboardFactory._btn(
                         "Добавить родителя", "add_parent", "secondary"
                     ),

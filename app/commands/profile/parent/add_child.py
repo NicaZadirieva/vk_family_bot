@@ -3,7 +3,6 @@ import re
 from app.commands.base import ICommand
 from app.core.di.services_container import ServicesContainer
 from app.core.repositories.base_user_state_repo import UserState
-from app.states.add.generate_child_password import GenerateChildPasswordState
 
 
 class AddChildCmd(ICommand):
@@ -65,7 +64,7 @@ class AddChildCmd(ICommand):
         params: str | None = None,
         payload: dict | None = None,
     ) -> tuple[str, str]:
-        generate_child_password_state = GenerateChildPasswordState(self.services)
+
         if params:
             vk_identifier, profile_name = self._parse_params(params or "")
 
@@ -80,7 +79,19 @@ class AddChildCmd(ICommand):
             # 1. Проверить, что VK ID не состоит в другой семье
             # 2. Проверить, что пользователь с таким VK ID существует в VK
             # 3. Если все ок, сгенерировать 6-значный код
+            from app.states.add.generate_child_password import (
+                GenerateChildPasswordState,
+            )
+
+            generate_child_password_state = GenerateChildPasswordState(
+                services=self.services
+            )
             state.data["vk_name"] = vk_identifier
             state.data["profile_name"] = profile_name
             await self.user_state_service.update_user_state(user_id, new_state=state)
-        return await generate_child_password_state.enter(user_id, state, payload)
+            return await generate_child_password_state.enter(user_id, state, payload)
+        else:
+            from app.states.add.add_child_vk_name import AddChildVkNameState
+
+            add_child_vk_name_state = AddChildVkNameState(services=self.services)
+            return await add_child_vk_name_state.enter(user_id, state, payload)
